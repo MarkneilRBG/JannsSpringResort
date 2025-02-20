@@ -1,6 +1,6 @@
 <template>
   <nav class="navbar navbar-expand-lg navbar-light fixed-top text-primary">
-    <div class="container">
+    <div class="container d-flex justify-content-between">
       <NuxtLink class="navbar-brand" href="#">Mouri</NuxtLink>
       <button
         class="navbar-toggler"
@@ -14,8 +14,8 @@
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav ml-auto">
+      <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
+        <ul class="navbar-nav">
           <li class="nav-item active">
             <a class="nav-link" href="#">Home</a>
           </li>
@@ -35,12 +35,7 @@
       </div>
     </div>
   </nav>
-
-
-
-
 </template>
 
 <style scoped>
-
 </style>
