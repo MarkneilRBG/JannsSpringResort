@@ -2,10 +2,12 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
-
+  ssr: true,
   css: [
     'bootstrap/dist/css/bootstrap.min.css',
-    '@/assets/styles/global.css'],
+    '@/assets/styles/global.css',
+    '~/assets/scss/main.scss'
+  ],
 
   modules: [
     '@nuxt/image',
@@ -13,5 +15,6 @@ export default defineNuxtConfig({
     'dayjs-nuxt',
     '@formkit/auto-animate/nuxt',
     '@samk-dev/nuxt-vcalendar',
+    '@nuxt/fonts',
   ],
 })
