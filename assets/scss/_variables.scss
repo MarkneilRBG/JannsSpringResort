@@ -1,0 +1,16 @@
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+
+$spacers: map-merge(
+  $spacers,
+  (
+    6: $spacer * 6,
+    7: $spacer * 7,
+    8: $spacer * 8,
+    9: $spacer * 9,
+    10: $spacer * 10
+  )
+);
+
+@import "bootstrap/scss/bootstrap";
+
