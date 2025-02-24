@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light fixed-top text-primary">
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top text-primary bg-dark bg-opacity-75">
     <div class="container d-flex justify-content-between">
       <NuxtLink class="navbar-brand" to="#">Janns</NuxtLink>
       <button

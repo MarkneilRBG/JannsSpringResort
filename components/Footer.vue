@@ -15,9 +15,14 @@
   <!-- Grid container -->
 
   <!-- Copyright -->
-  <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
-    © 2020 Copyright:
-    <a class="text-body" href="https://mdbootstrap.com/">Janns Spring Resort</a>
+ 
+  <div class="text-center p-3 font-size-footer" style="background-color: rgba(0, 0, 0, 0.05);">
+    <p class="fs-5">
+    Privacy Policy | Terms of Use 
+   </p>
+    © 2025 Copyright:
+    <a class="text-body" href="https://mdbootstrap.com/">Janns Spring Resort.</a>
+    <span> All Rights Reserved. ICP license: 17055189</span>
   </div>
   <!-- Copyright -->
   </footer>

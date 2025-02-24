@@ -2,38 +2,76 @@
   <div>
     <!-- CAROUSEL -->
     <div id="carouselExampleAutoplaying" class="carousel slide" data-bs-ride="carousel">
-      <div class="carousel-inner">
-        <div class="carousel-item active">
-          <NuxtImg src="resort.jpg" class="d-block w-100" alt="..."/>
-          <div class="carousel-caption d-none d-md-block">
-            <h5>Relax and Unwind</h5>
-            <p>Enjoy the serene atmosphere of Janns Spring Resort.</p>
-          </div>
+  <div class="carousel-inner h-25">
+    <div class="carousel-item active">
+      <NuxtImg src="resort.jpg" class="d-block w-100 carousel-img" alt="..."/>
+      <div class="carousel-caption d-none d-md-block">
+        <h5 class="fs-1">Relax and Unwind</h5>
+        <p class="fs-5">Enjoy the serene atmosphere of Janns Spring Resort.</p>
+      </div>
+    </div>
+    <div class="carousel-item">
+      <NuxtImg src="resort1.jpg" class="d-block w-100 carousel-img" alt="..." />
+      <div class="carousel-caption d-none d-md-block">
+        <h5 class="fs-1">Crystal Clear Waters</h5>
+        <p class="fs-5">Dive into refreshing natural spring pools.</p>
+      </div>
+    </div>
+    <div class="carousel-item">
+      <NuxtImg src="resort2.jpg" class="d-block w-100 carousel-img" alt="..." />
+      <div class="carousel-caption d-none d-md-block">
+        <h5 class="fs-1">Nature's Paradise</h5>
+        <p class="fs-5">Experience tranquility surrounded by lush greenery.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compact Search Box Overlay -->
+  <div class="position-absolute start-50 translate-middle-x w-75 p-2 bg-white rounded shadow" style="top: 95%; z-index:10;">
+    <form>
+      <div class="row g-1 align-items-center">
+        <!-- Location -->
+        <div class="col-md">
+          <input type="text" class="form-control" placeholder="Location" id="locationInput">
         </div>
-        <div class="carousel-item">
-          <NuxtImg src="resort1.jpg" class="d-block w-100" alt="..."/>
-          <div class="carousel-caption d-none d-md-block">
-            <h5>Crystal Clear Waters</h5>
-            <p>Dive into refreshing natural spring pools.</p>
-          </div>
+        <!-- Check-in -->
+        <div class="col-md">
+          <input type="date" class="form-control" id="checkIn">
         </div>
-        <div class="carousel-item">
-          <NuxtImg src="resort2.jpg" class="d-block w-100" alt="..."/>
-          <div class="carousel-caption d-none d-md-block">
-            <h5>Nature's Paradise</h5>
-            <p>Experience tranquility surrounded by lush greenery.</p>
-          </div>
+        <!-- Check-out -->
+        <div class="col-md">
+          <input type="date" class="form-control" id="checkOut">
+        </div>
+        <!-- Guests -->
+        <div class="col-md">
+          <select class="form-select" id="guestSelect">
+            <option value="1">1 Adult</option>
+            <option value="2">2 Adults</option>
+            <option value="3">3 Adults</option>
+          </select>
+        </div>
+        <!-- Search Button -->
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">Search</button>
         </div>
       </div>
-      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous</span>
-      </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Next</span>
-      </button>
+    </form>
+  </div>
+  <!-- End Search Box Overlay -->
+
+  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Previous</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Next</span>
+  </button>
     </div>
+
+
+
+
 
     <!-- ABOUT  -->
     <div class="text-center mt-5 container px-md-12">
@@ -62,7 +100,7 @@
       <MultiCarousel />
     </div>
 
-    <div class="container text-secondary text-center mt-5 px-12">
+    <div class="container text-secondary text-center mt-5 px-md-12">
       <p>Experience the tranquility and beauty of Jann’s Spring Resort, where nature and relaxation come together. Discover the perfect escape from the everyday hustle, and create unforgettable memories with your loved ones.</p>
       <button class="btn btn-primary px-9"> Book Now </button>
     </div>
