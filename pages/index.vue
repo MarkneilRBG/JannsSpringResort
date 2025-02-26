@@ -64,9 +64,40 @@
           </div>
         </form>
       </div>
+      <!-- Button appear only in small screen size -->
       <div class="position-absolute w-100 d-flex justify-content-center" style="top: 50%; z-index:10;">
-        <button class="btn btn-primary d-block d-sm-none btn-indigo-200 ">Book Now</button>
+        <button class="btn btn-primary d-block d-sm-none btn-indigo-200 " data-bs-toggle="modal" data-bs-target="#exampleModal">Book Now</button>
       </div>
+<!-- modal -->
+      <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-body">
+        <button type="button" class="btn-close position-absolute top-0 end-0 m-2" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h1 class="text-center fs-5 pt-3">Book your stay</h1>
+        <p>Choose your dates and number of guests below:</p>
+        <form>
+          <div class="mb-3">
+            <label for="checkIn" class="form-label">Check-in Date:</label>
+            <input type="date" class="form-control" id="checkIn" v-model="today">
+          </div>
+          <div class="mb-3">
+            <label for="checkOut" class="form-label">Check-out Date:</label>
+            <input type="date" class="form-control" id="checkOut" v-model="tomorrow">
+          </div>
+          <div class="mb-3">
+            <label for="guests" class="form-label">Guests:</label>
+            <input type="number" class="form-control" id="guests" placeholder="Enter number of guests">
+          </div>
+          <button type="button" class="btn btn-success w-100">Confirm Booking</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
       <!-- End Search Box Overlay -->
 
@@ -115,13 +146,45 @@
   <Testimonials />
 </div>
 
-<button class="btn btn-success" onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
+<button 
+  class="btn btn-success position-fixed  bottom-0 end-0 m-4" 
+  style="z-index: 10000;" 
+  v-if="showButton" 
+  @click="scrollToTop" 
+>
+  <BaseIcon name="mdi:arrow-up-bold" size="1em" color="red" />
+
+</button>
   </div>
 
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue';
+
+//modal
+const showModal = ref(false);
+const today1 = ref(new Date().toISOString().split("T")[0]);
+const tomorrow2 = ref(new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split("T")[0]);
+
+//scroll to top
+const showButton = ref(false);
+
+const handleScroll = () => {
+  showButton.value = window.scrollY > 200;
+};
+
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
 
 // Function to format a Date object as YYYY-MM-DD
 const formatDate = (date) => {
@@ -139,26 +202,26 @@ const today = ref(formatDate(new Date()))
 const tomorrow = ref(formatDate(new Date(new Date().setDate(new Date().getDate() + 1))))
 
 
-let mybutton = document.getElementById("myBtn");
+// let mybutton = document.getElementById("myBtn");
 
-// When the user scrolls down 20px from the top of the document, show the button
-window.onscroll = function() {scrollFunction()};
+// // When the user scrolls down 20px from the top of the document, show the button
+// window.onscroll = function() {scrollFunction()};
 
-function scrollFunction() {
-  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-    mybutton.style.display = "block";
-    console.log('testss')
-  } else {
-    mybutton.style.display = "none";
-    console.log('testss1')
-  }
-}
+// function scrollFunction() {
+//   if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+//     mybutton.style.display = "block";
+//     console.log('testss')
+//   } else {
+//     mybutton.style.display = "none";
+//     console.log('testss1')
+//   }
+// }
 
-// When the user clicks on the button, scroll to the top of the document
-function topFunction() {
-  document.body.scrollTop = 0; // For Safari
-  document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
-}
+// // When the user clicks on the button, scroll to the top of the document
+// function topFunction() {
+//   document.body.scrollTop = 0; // For Safari
+//   document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+// }
 
 
 
