@@ -4,10 +4,10 @@
   <div class="container pt-4">
     <!-- Section: Social media -->
     <div class="d-flex justify-content-center pb-3">
-                <NuxtLink class="mx-4" to="#"><Icon name="logos:facebook" size="1.5em" /></NuxtLink>
+                <NuxtLink class="mx-4" to="https://www.facebook.com/jannspringresort"><Icon name="logos:facebook" size="1.5em" /></NuxtLink>
                 <NuxtLink class="mx-4" to="#"><Icon name="flat-color-icons:google" size="1.5em" /></NuxtLink>
                 <NuxtLink class="mx-4 text-dark" to="#"><Icon name="fa6-brands:square-x-twitter" size="1.5em" /></NuxtLink>
-                <NuxtLink class="mx-4" to="#"><Icon name="skill-icons:instagram" size="1.5em" /></NuxtLink>
+                <NuxtLink class="mx-4" to="https://www.instagram.com/explore/locations/118209244609625/janns-spring-resort/"><Icon name="skill-icons:instagram" size="1.5em" /></NuxtLink>
                 <NuxtLink class="mx-4" to="#"><Icon name="mdi:twitter" size="1.5em" /></NuxtLink>
               </div>
     <!-- Section: Social media -->
