@@ -18,7 +18,7 @@
  
   <div class="text-center p-3 font-size-footer" style="background-color: rgba(0, 0, 0, 0.05);">
     <p class="fs-5">
-    Privacy Policy | Terms of Use 
+    <NuxtLink class="text-decoration-none text-black" to="#"> Privacy Policy  </NuxtLink> | <NuxtLink class="text-decoration-none text-black" to="#">Terms of Use </NuxtLink>
    </p>
     © 2025 Copyright:
     <a class="text-body" href="https://mdbootstrap.com/">Janns Spring Resort.</a>
