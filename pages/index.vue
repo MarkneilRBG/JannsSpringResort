@@ -65,7 +65,7 @@
         </form>
       </div>
       <!-- Button appear only in small screen size -->
-      <div class="position-absolute w-100 d-flex justify-content-center" style="top: 50%; z-index:10;">
+      <div class="position-absolute w-100 d-flex justify-content-center" style="top: 47.5%; z-index:10;">
         <button class="btn btn-primary d-block d-sm-none btn-indigo-200 " data-bs-toggle="modal" data-bs-target="#exampleModal">Book Now</button>
       </div>
 <!-- modal -->
@@ -137,7 +137,7 @@
 
     <div class="container text-secondary text-center mt-5 px-md-12">
       <p>Experience the tranquility and beauty of Jann’s Spring Resort, where nature and relaxation come together. Discover the perfect escape from the everyday hustle, and create unforgettable memories with your loved ones.</p>
-      <button class="btn btn-primary px-9"> Book Now </button>
+      <button class="btn btn-primary px-md-9"> Book Now </button>
     </div>
 
 
