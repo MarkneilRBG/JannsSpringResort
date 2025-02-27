@@ -1,131 +1,155 @@
 <template>
-  <div class="container pt-6 ">
-    <h1 class="text-center fw-bold mb-4">Privacy Policy</h1>
-    <p class="text-muted text-center">Last updated: February 26, 2025</p>
+  <div class="container-fluid d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar d-flex flex-column">
+      <h3 class="fw-bold text-center mb-3">Privacy Policy</h3>
+      <nav class="nav flex-column flex-grow-1">
+        <button 
+          v-for="(section, index) in sections" 
+          :key="index"
+          class="nav-link"
+          :class="{ active: activeSection === section.id }"
+          @click="setActiveSection(section.id)"
+        >
+          {{ section.title }}
+        </button>
+      </nav>
+      <NuxtLink class="btn btn-primary" to="/">Go to Index</NuxtLink>
+    </aside>
 
-    <hr class="mb-4" />
+    <!-- Content Area -->
+    <main class="content p-4">
+      <section v-for="(section, index) in sections" :key="index">
+        <div v-show="activeSection === section.id">
+          <h2 class="fw-bold">{{ section.title }}</h2>
+          <p v-html="section.content"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+</template>
 
-    <section>
-      <h2 class="fw-bold">1. Introduction</h2>
-      <p>
-        Welcome to <strong>Janns Spring Resort</strong>! We value your privacy and are committed to protecting your personal information. 
-        This Privacy Policy explains how we collect, use, and safeguard your data when you visit our website or use our services.
-      </p>
-      <p>
-        By accessing our website, you agree to the terms outlined in this policy. If you do not agree, please discontinue use of our services.
-      </p>
-    </section>
+<script setup>
+definePageMeta({
+  layout: false
+});
+import { ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useState } from "#app";
 
-    <section>
-      <h2 class="fw-bold">2. Information We Collect</h2>
-      <p>We collect different types of information to provide and improve our services, including:</p>
+const route = useRoute();
+const router = useRouter();
+
+// Sections Data
+const sections = ref([
+  { id: "introduction", title: "Introduction", content: `<p>Welcome to <strong>Janns Spring Resort</strong>! We value your privacy and are committed to protecting your personal information.</p>
+      <p>By accessing our website, you agree to the terms outlined in this policy.</p>
       <ul>
+        <li>We respect your privacy at all times.</li>
+        <li>Your data will not be shared without your consent.</li>
+        <li>Our policies comply with legal standards.</li>
+        <li>We continuously update our security measures.</li>
+      </ul>` },
+  { id: "information", title: "Information We Collect", content: `<ul>
         <li><strong>Personal Information:</strong> Your name, email, phone number, and any details provided during reservations.</li>
-        <li><strong>Payment Details:</strong> We process payments securely, but do not store credit card information.</li>
+        <li><strong>Payment Details:</strong> We process payments securely but do not store credit card information.</li>
         <li><strong>Usage Data:</strong> Information such as your IP address, browser type, pages visited, and time spent on our site.</li>
         <li><strong>Cookies & Tracking:</strong> We use cookies to enhance your browsing experience and analyze website traffic.</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2 class="fw-bold">3. How We Use Your Information</h2>
-      <p>We use the information we collect to:</p>
+      </ul>` },
+  { id: "usage", title: "How We Use Your Information", content: `<p>We use the information we collect to:</p>
       <ul>
         <li>Process bookings and reservations efficiently.</li>
         <li>Improve our website and services based on user behavior.</li>
         <li>Send important updates, promotional offers, or resort-related news (with your consent).</li>
         <li>Enhance security and prevent fraudulent activities.</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2 class="fw-bold">4. Data Protection & Security</h2>
-      <p>
-        We take strong security measures to protect your data from unauthorized access, alteration, or disclosure. Our security practices include:
-      </p>
+      </ul>` },
+  { id: "security", title: "Data Protection & Security", content: `<p>We take strong security measures to protect your data from unauthorized access, alteration, or disclosure.</p>
       <ul>
         <li>Secure Socket Layer (SSL) encryption to protect online transactions.</li>
         <li>Strict access control for personal information.</li>
         <li>Regular security audits and updates to safeguard your data.</li>
-      </ul>
-      <p><strong>Remember:</strong> While we do our best to protect your data, no online system is 100% secure. Always practice safe browsing habits.</p>
-    </section>
-
-    <section>
-      <h2 class="fw-bold">5. Your Rights & Choices</h2>
-      <p>As a valued user, you have the right to:</p>
+        <li>Compliance with industry security standards.</li>
+      </ul>` },
+  { id: "rights", title: "Your Rights & Choices", content: `<p>As a valued user, you have the right to:</p>
       <ul>
         <li>Request access to the personal data we have on file.</li>
         <li>Request corrections if any of your information is inaccurate.</li>
         <li>Ask us to delete your data (except when legally required to retain it).</li>
         <li>Opt-out of marketing emails by clicking the "unsubscribe" link.</li>
-      </ul>
-    </section>
+      </ul>` },
+]);
 
-    <section>
-      <h2 class="fw-bold">6. Cookies & Tracking Technologies</h2>
-      <p>We use cookies and similar technologies to improve your browsing experience. You can manage or disable cookies in your browser settings.</p>
-      <ul>
-        <li><strong>Essential Cookies:</strong> Required for website functionality (e.g., logins, bookings).</li>
-        <li><strong>Analytics Cookies:</strong> Help us understand how users interact with our site.</li>
-        <li><strong>Marketing Cookies:</strong> Used to personalize offers and advertisements.</li>
-      </ul>
-    </section>
+// State Management with URL Persistence
+const activeSection = useState("activeSection", () => route.query.section || "introduction");
 
-    <section>
-      <h2 class="fw-bold">7. Third-Party Services</h2>
-      <p>We may work with trusted third-party services, including:</p>
-      <ul>
-        <li><strong>Payment Processors:</strong> Securely handle transactions.</li>
-        <li><strong>Analytics Providers:</strong> Help us understand website traffic and user behavior.</li>
-        <li><strong>Marketing Partners:</strong> Assist in promotional campaigns.</li>
-      </ul>
-      <p>We ensure that these third parties comply with data protection standards.</p>
-    </section>
+const setActiveSection = (sectionId) => {
+  activeSection.value = sectionId;
+  router.replace({ query: { section: sectionId } });
+};
 
-    <section>
-      <h2 class="fw-bold">8. Policy Updates</h2>
-      <p>We may update this Privacy Policy periodically. Any changes will be posted here, and significant updates may be communicated via email.</p>
-      <p>We encourage you to review this page regularly to stay informed about how we protect your data.</p>
-    </section>
-
-    <section>
-      <h2 class="fw-bold">9. Contact Us</h2>
-      <p>If you have any questions, concerns, or requests regarding your data, feel free to contact us:</p>
-      <ul>
-        <li>Email: <a href="https://mail.google.com/mail/?view=cm&fs=1&to=jannspringresort@gmail.com&su=SUBJECT&body=BODY" target="_blank">info@jannsspringresort.com</a></li>
-        <li>Phone: +63 907 040 2818</li>
-        <li>Address: Janns Spring Resort, Malilipot, Albay, Philippines</li>
-      </ul>
-    </section>
-
-    <div class="text-center mt-5">
-      <NuxtLink to="/" class="btn btn-primary">Back to Home</NuxtLink>
-    </div>
-  </div>
-</template>
-
-<script setup>
-useSeoMeta({
-  title: 'Privacy Policy - Janns Spring Resort',
-  description: 'Read how we collect, use, and protect your personal data at Janns Spring Resort.',
-  keywords: 'privacy policy, data protection, personal data, cookies, security, Janns Spring Resort',
+// Watch URL for changes
+watch(() => route.query.section, (newSection) => {
+  if (newSection && sections.value.some(s => s.id === newSection)) {
+    activeSection.value = newSection;
+  }
 });
 </script>
 
 <style scoped>
-h2 {
-  margin-top: 30px;
-  color: #2c3e50;
+.container-fluid {
+  display: flex;
 }
 
-p, li {
-  font-size: 1.1rem;
+/* Sidebar Styles */
+.sidebar {
+  width: 240px;
+  background: #f8f9fa;
+  border-right: 1px solid #ddd;
+  padding: 20px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-link {
   color: #555;
-  line-height: 1.6;
+  text-align: left;
+  padding: 10px 15px;
+  border-radius: 5px;
+  transition: background 0.3s, color 0.3s;
+  width: 100%;
+  text-decoration: none;
+  background: none;
+  border: none;
+  text-align: left;
 }
 
-ul {
-  margin-bottom: 20px;
+.nav-link:hover {
+  background: #e9ecef;
+  color: #007bff;
+}
+
+.nav-link.active {
+  font-weight: bold;
+  background: #007bff;
+  color: white;
+}
+
+.btn {
+  margin-top: auto;
+  padding: 10px;
+  font-size: 16px;
+}
+
+/* Content Area */
+.content {
+  flex: 1;
+  padding: 40px;
+}
+
+h2 {
+  color: #2c3e50;
 }
 </style>
