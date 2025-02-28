@@ -1,65 +1,132 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light fixed-top text-primary bg-dark bg-opacity-75" style="width: 100vw; overflow: hidden;">
-    <div class="container d-flex justify-content-between">
-      <NuxtLink class="navbar-brand" to="#">Janns</NuxtLink>
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarSupportedContent"
-        aria-controls="navbarSupportedContent"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
+  <div>
+    <nav 
+      class="navbar navbar-expand-lg navbar-light fixed-top text-primary bg-dark bg-opacity-75"
+      :class="{ 'hidden-navbar': !isNavbarVisible }"
+      style="width: 100vw; overflow: hidden; transition: transform 0.3s ease-in-out;">
+      <div class="container d-flex justify-content-between">
+        <NuxtLink class="navbar-brand" to="#">Janns</NuxtLink>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Home'}" to="/">Home</NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'About'}" to="about">About</NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Services'}" to="services">Services</NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Contact'}" to="contact">Contact</NuxtLink>
+              <NuxtLink data-bs-toggle="modal" data-bs-target="#loginModal" class="nav-link" :class="{ 'active-link': activeLink === 'SignIn'}" to="contact">Sign In</NuxtLink>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
 
-      <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Home'}" to="/">Home</NuxtLink>
-          </li>
-          <li class="nav-item">
-            <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'About'}" to="about">About</NuxtLink>
-          </li>
-          <li class="nav-item">
-            <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Services'}" to="services">Services</NuxtLink>
-          </li>
-          <li class="nav-item">
-            <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Contact'}" to="contact">Contact</NuxtLink>
-          </li>
-        </ul>
+    <!-- Modal for sign in -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Welcome Back!</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="mb-3">
+                <label class="form-label">Email address</label>
+                <div class="input-group">
+                  <input type="email" class="form-control" placeholder="name@example.com">
+                  <span class="input-group-text">
+                    <Icon name="mdi:envelope-outline" class="text-secondary"/>
+                  </span>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Password</label>
+                <div class="input-group">
+                  <input type="password" class="form-control" placeholder="Enter your password">
+                  <span class="input-group-text password-toggle">
+                    <Icon name="solar:lock-password-bold" class="text-secondary"/>
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-check d-flex justify-content-between">
+                <div>
+                  <input type="checkbox" class="form-check-input" id="remember">
+                  <label class="form-check-label" for="remember">Remember me</label>
+                </div>
+                <a href="#" class="text-decoration-none">Forgot password?</a>
+              </div>
+              <button type="submit" class="btn btn-login text-white my-2">Sign In</button>
+              <div class="register-link text-center">
+                Don't have an account? <a href="#" class="text-decoration-none">Register now</a>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
-  </nav>
+
+  </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute } from '#app';
 
 const route = useRoute();
 const activeLink = ref('');
+const lastScrollY = ref(0);
+const isNavbarVisible = ref(true);
 
 const setActiveLink = (path) => {
   if (path === '/') activeLink.value = 'Home';
   else if (path === '/about') activeLink.value = 'About';
   else if (path === '/services') activeLink.value = 'Services';
   else if (path === '/contact') activeLink.value = 'Contact';
+  else if (path === '/contact') activeLink.value = 'SignIn';
 };
 
-onMounted(() => setActiveLink(route.path));
-watch(() => route.path, (newPath) => setActiveLink(newPath)); 
+const handleScroll = () => {
+  const currentScrollY = window.scrollY;
+  isNavbarVisible.value = currentScrollY < lastScrollY.value || currentScrollY <= 10;
+  lastScrollY.value = currentScrollY;
+};
+
+onMounted(() => {
+  setActiveLink(route.path);
+  window.addEventListener('scroll', handleScroll);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
+
+watch(() => route.path, (newPath) => setActiveLink(newPath));
 </script>
 
 <style scoped>
-.divider:after,
-.divider:before {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: #eee;
+.hidden-navbar {
+  transform: translateY(-100%);
 }
+
 
 .nav-link {
   position: relative;
@@ -96,5 +163,147 @@ watch(() => route.path, (newPath) => setActiveLink(newPath));
 .navbar {
   width: 100%;
   overflow: hidden;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #0062cc, #0096ff);
+    padding: 20px;
+    border: none;
+    color: white;
+}
+
+.modal-title {
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.form-control {
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: 2px solid #eee;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #0062cc;
+    box-shadow: none;
+}
+
+.input-group-text {
+    border: none;
+    background: transparent;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 4;
+    color: #666;
+}
+
+
+.input-group {
+    position: relative;
+}
+
+.btn-login {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #0062cc, #0096ff);
+    border: none;
+    border-radius: 10px;
+    font-weight: 500;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 98, 204, 0.3);
+}
+
+.social-login {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-social {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px solid #eee;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.btn-social:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+}
+
+.btn-social i {
+    margin-right: 10px;
+}
+
+
+/* for navbar style */
+.navbar-light .navbar-brand {
+  color: #fff;
+  font-size: 25px;
+  text-transform: uppercase;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.navbar-light .navbar-nav .active > .nav-link,
+.navbar-light .navbar-nav .nav-link.active,
+.navbar-light .navbar-nav .nav-link.show,
+.navbar-light .navbar-nav .show > .nav-link {
+  color: #fff;
+}
+
+.navbar-light .navbar-nav .nav-link {
+  color: #fff;
+}
+
+.navbar-toggler {
+  background: #fff;
+}
+
+.navbar-nav {
+  text-align: center;
+}
+
+.nav-link {
+  padding: 0.2rem 1rem;
+}
+
+.nav-link.active,
+.nav-link:focus {
+  color: #fff;
+}
+
+.navbar-toggler {
+  padding: 1px 5px;
+  font-size: 18px;
+  line-height: 0.3;
+}
+
+.navbar-light .navbar-nav .nav-link:focus,
+.navbar-light .navbar-nav .nav-link:hover {
+  color: #fff;
 }
 </style>
