@@ -30,7 +30,11 @@
             </li>
             <li class="nav-item">
               <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Contact'}" to="contact">Contact</NuxtLink>
+           
+            </li>
+            <li class="nav-item">
               <NuxtLink data-bs-toggle="modal" data-bs-target="#loginModal" class="nav-link" :class="{ 'active-link': activeLink === 'SignIn'}" to="contact">Sign In</NuxtLink>
+           
             </li>
           </ul>
         </div>
@@ -41,7 +45,7 @@
     <div class="modal fade" id="loginModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-          <div class="modal-header">
+          <div class="modal-header modal-header-login">
             <h5 class="modal-title">Welcome Back!</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
@@ -50,7 +54,7 @@
               <div class="mb-3">
                 <label class="form-label">Email address</label>
                 <div class="input-group">
-                  <input type="email" class="form-control" placeholder="name@example.com">
+                  <input type="email" class="form-control rounded-2" placeholder="name@example.com">
                   <span class="input-group-text">
                     <Icon name="mdi:envelope-outline" class="text-secondary"/>
                   </span>
@@ -60,9 +64,13 @@
               <div class="mb-3">
                 <label class="form-label">Password</label>
                 <div class="input-group">
-                  <input type="password" class="form-control" placeholder="Enter your password">
-                  <span class="input-group-text password-toggle">
-                    <Icon name="solar:lock-password-bold" class="text-secondary"/>
+                  <input
+                    :type="showPassword ? 'text' : 'password'"
+                    class="form-control rounded-2"
+                    placeholder="Enter your password"
+                  />
+                  <span class="input-group-text password-toggle" @click="togglePassword">
+                    <Icon :name="showPassword ? 'tabler:eye-off' : 'tabler:eye'" class="text-secondary pointer"/>
                   </span>
                 </div>
               </div>
@@ -74,9 +82,10 @@
                 </div>
                 <a href="#" class="text-decoration-none">Forgot password?</a>
               </div>
-              <button type="submit" class="btn btn-login text-white my-2">Sign In</button>
+              <button type="submit" class="btn btn-login text-white my-2 modal-header-login">Sign In</button>
               <div class="register-link text-center">
-                Don't have an account? <a href="#" class="text-decoration-none">Register now</a>
+                Don't have an account? 
+                  <NuxtLink to="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#registerModal">Register now</NuxtLink>
               </div>
             </form>
           </div>
@@ -84,12 +93,86 @@
       </div>
     </div>
 
+        <!-- Modal for register  -->
+        <div class="modal fade" id="registerModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header modal-header-register">
+            <h5 class="modal-title">Sign Up</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="mb-3">
+                <label class="form-label">Name</label>
+                <div class="input-group">
+                  <input type="email" class="form-control rounded-2" placeholder="name@example.com">
+                  <span class="input-group-text">
+                    <Icon name="mdi:envelope-outline" class="text-secondary"/>
+                  </span>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email address</label>
+                <div class="input-group">
+                  <input type="email" class="form-control rounded-2" placeholder="name@example.com">
+                  <span class="input-group-text">
+                    <Icon name="mdi:envelope-outline" class="text-secondary"/>
+                  </span>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email address</label>
+                <div class="input-group">
+                  <input type="email" class="form-control rounded-2" placeholder="name@example.com">
+                  <span class="input-group-text">
+                    <Icon name="mdi:envelope-outline" class="text-secondary"/>
+                  </span>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Password</label>
+                <div class="input-group">
+                  <input
+                    :type="showPassword ? 'text' : 'password'"
+                    class="form-control rounded-2"
+                    placeholder="Enter your password"
+                  />
+                  <span class="input-group-text password-toggle" @click="togglePassword">
+                    <Icon :name="showPassword ? 'tabler:eye-off' : 'tabler:eye'" class="text-secondary pointer"/>
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-check d-flex justify-content-between">
+                <div>
+                  <input type="checkbox" class="form-check-input" id="remember">
+                  <label class="form-check-label" for="remember">Remember me</label>
+                </div>
+                <a href="#" class="text-decoration-none">Forgot password?</a>
+              </div>
+              <button type="submit" class="btn btn-login text-white my-2 modal-header-register">Create account</button>
+              <div class="register-link text-center">
+                Already have an account? 
+                  <NuxtLink to="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#loginModal">Login</NuxtLink>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute } from '#app';
+
+const showPassword = ref(false)
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
 
 const route = useRoute();
 const activeLink = ref('');
@@ -173,10 +256,17 @@ watch(() => route.path, (newPath) => setActiveLink(newPath));
 }
 
 .modal-header {
-    background: linear-gradient(135deg, #0062cc, #0096ff);
+
     padding: 20px;
     border: none;
     color: white;
+}
+
+.modal-header-login{
+  background: linear-gradient(135deg, #0062cc, #0096ff);
+}
+.modal-header-register {
+    background: linear-gradient(135deg, #2ccc00, #62ff00);
 }
 
 .modal-title {
@@ -210,10 +300,14 @@ watch(() => route.path, (newPath) => setActiveLink(newPath));
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 4;
+    z-index: 10; /* Increase z-index */
     color: #666;
+    pointer-events: auto; /* Ensure clickability */
 }
 
+.input-group:focus-within .input-group-text {
+    color: #0096ff; /* Change color when input is active */
+}
 
 .input-group {
     position: relative;
@@ -221,12 +315,15 @@ watch(() => route.path, (newPath) => setActiveLink(newPath));
 
 .btn-login {
     padding: 12px 20px;
-    background: linear-gradient(135deg, #0062cc, #0096ff);
     border: none;
     border-radius: 10px;
     font-weight: 500;
     width: 100%;
     transition: all 0.3s ease;
+}
+
+.btn-create-account {
+  background: linear-gradient(135deg, #0062cc, #0096ff);
 }
 
 .btn-login:hover {
@@ -306,4 +403,6 @@ watch(() => route.path, (newPath) => setActiveLink(newPath));
 .navbar-light .navbar-nav .nav-link:hover {
   color: #fff;
 }
+
+
 </style>
