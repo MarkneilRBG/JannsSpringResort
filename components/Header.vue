@@ -106,7 +106,7 @@
               <div class="mb-3">
                 <label class="form-label">Name</label>
                 <div class="input-group">
-                  <input type="email" class="form-control rounded-2" placeholder="name@example.com">
+                  <input type="email" class="form-control rounded-2" placeholder="Enter your full name">
                   <span class="input-group-text">
                     <Icon name="mdi:envelope-outline" class="text-secondary"/>
                   </span>
@@ -115,19 +115,16 @@
               <div class="mb-3">
                 <label class="form-label">Email address</label>
                 <div class="input-group">
-                  <input type="email" class="form-control rounded-2" placeholder="name@example.com">
+                  <input type="email" class="form-control rounded-2" placeholder="Enter your email address">
                   <span class="input-group-text">
                     <Icon name="mdi:envelope-outline" class="text-secondary"/>
                   </span>
                 </div>
               </div>
               <div class="mb-3">
-                <label class="form-label">Email address</label>
+                <label class="form-label">Birth date</label>
                 <div class="input-group">
-                  <input type="email" class="form-control rounded-2" placeholder="name@example.com">
-                  <span class="input-group-text">
-                    <Icon name="mdi:envelope-outline" class="text-secondary"/>
-                  </span>
+                  <input type="date" class="form-control rounded-2" placeholder="Enter your email address">
                 </div>
               </div>
 
@@ -145,6 +142,20 @@
                 </div>
               </div>
 
+              <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                <div class="input-group">
+                  <input
+                    :type="showPassword ? 'text' : 'password'"
+                    class="form-control rounded-2"
+                    placeholder="Enter your password"
+                  />
+                  <span class="input-group-text password-toggle" @click="togglePassword1">
+                    <Icon :name="showPassword1 ? 'tabler:eye-off' : 'tabler:eye'" class="text-secondary pointer"/>
+                  </span>
+                </div>
+              </div>
+
               <div class="form-check d-flex justify-content-between">
                 <div>
                   <input type="checkbox" class="form-check-input" id="remember">
@@ -155,7 +166,7 @@
               <button type="submit" class="btn btn-login text-white my-2 modal-header-register">Create account</button>
               <div class="register-link text-center">
                 Already have an account? 
-                  <NuxtLink to="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#loginModal">Login</NuxtLink>
+                  <NuxtLink to="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#loginModal">Log in</NuxtLink>
               </div>
             </form>
           </div>
@@ -172,6 +183,10 @@ import { useRoute } from '#app';
 const showPassword = ref(false)
 const togglePassword = () => {
   showPassword.value = !showPassword.value
+}
+const showPassword1 = ref(false)
+const togglePassword1 = () => {
+  showPassword1.value = !showPassword1.value
 }
 
 const route = useRoute();
