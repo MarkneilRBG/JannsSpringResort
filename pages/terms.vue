@@ -51,7 +51,8 @@ const sections = ref([
 ]);
 
 // State Management with URL Persistence
-const activeSection = useState("activeSection", () => route.query.section || "overview");
+const activeSection = useState("activeSectionTerms", () => route.query.section || "overview");
+
 
 const setActiveSection = (sectionId) => {
   activeSection.value = sectionId;

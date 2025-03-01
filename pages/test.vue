@@ -27,4 +27,6 @@ const [parent] = useAutoAnimate()
       {{ item }}
     </li>
   </ul>
+
+  <inputPassword />
 </template>
