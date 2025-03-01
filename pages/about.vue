@@ -12,12 +12,12 @@ useHead({
     <section class="about py-5 ">
       <div class="container">
         
-        <div class="row align-items-center  pt-4">
+        <div class="row align-items-center  pt-5">
           <div class="pb-4">
-            <h2 class="text-center">About Janns Spring Resort</h2>
-              <p class="fs-5 ">
+            <h1 class="text-center font-carattere ">Janns Spring Resort</h1>
+              <h3>
                 Get to know us
-              </p>
+              </h3>
               <p>
                 Forget everything you know about country houses and hotels. We're not twee or precious - our glorious estates are all about enjoyment and fun.Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptates. Quae consequuntur similique dolore itaque quod veritatis et, provident eaque in, repellat totam ratione autem deserunt nam, natus earum nihil?Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nihil unde sed odit, quas itaque molestiae debitis rem, doloribus asperiores atque impedit dicta, ad omnis! Fuga, voluptates. Fuga doloremque officiis ab. Lorem ipsum dolor sit amet consectetur, adipisicing elit. Inventore culpa maxime illo tenetur et impedit reiciendis veniam at, magnam perspiciatis, esse nulla labore modi doloribus cupiditate nobis aperiam cum dignissimos.
               </p>
@@ -26,19 +26,35 @@ useHead({
               </p>
           </div>
           <div class="col-md-6">
-            <h2>Our Story</h2>
+            <h3>Our Story</h3>
             <p>
               Lorem ipsum dolor, sit amet consectetur adipisicing elit. Soluta perferendis nam asperiores a itaque odio, voluptates repellendus dignissimos est facilis delectus neque totam consectetur quis eum aliquam maxime quam eaque!Lorem
               Lorem ipsum dolor, sit amet consectetur adipisicing elit. Veniam, quisquam. Quae consequuntur similique dolore itaque quod veritatis et, provident eaque in, repellat totam ratione autem deserunt nam, natus earum nihil?Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nihil unde sed odit, quas itaque molestiae debitis rem, doloribus asperiores atque impedit dicta, ad omnis! Fuga, voluptates. Fuga doloremque officiis ab. Lorem ipsum dolor sit amet consectetur, adipisicing elit. Inventore culpa maxime illo tenetur et impedit reiciendis veniam at, magnam perspiciatis, esse nulla labore modi doloribus cupiditate nobis aperiam cum dignissimos.
             </p>
           </div>
           <div class="col-md-6">
-            <NuxtImg src="resort.jpg" alt="Janns Spring Resort" class="img-fluid rounded"/>
+            <NuxtImg 
+              src="resort.jpg" 
+              alt="Janns Spring Resort" 
+              class="img-fluid rounded" 
+              quality="86"
+            />
           </div>
         </div>
       </div>
     </section>
 
+  <hr class="w-75 mx-auto " />
+    <section>
+      <div class="container my-5 w-50">
+        <CardHorizontal
+          title="Beautiful Resort"
+          description="Experience the best vacation with breathtaking views and luxurious amenities."
+          link="#"
+        />
+      </div>
+    </section>
+  <hr class="w-75 mx-auto" />
     <!-- Features Section -->
     <section class="features bg-light py-5">
       <div class="container">
@@ -61,7 +77,7 @@ useHead({
         </div>
       </div>
     </section>
-    <section class="container">
+    <!-- <section class="container">
       <div class="row">
         <p class="fs-4 fw-bold">Connect with us</p>
         <div class="col-md-4">
@@ -74,7 +90,8 @@ useHead({
           <NuxtImg src="resort.jpg" class="img-fluid"></NuxtImg>
         </div>
       </div>
-    </section>
+    </section> -->
+
   </div>
 
 </template>
