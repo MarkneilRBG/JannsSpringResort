@@ -2,7 +2,7 @@
   <div class="card shadow-sm border-0 overflow-hidden">
     <div class="row g-0">
       <!-- Image Section (50%) -->
-      <div class="col-md-6">
+      <div class=" col-md-6">
         <NuxtImg src="resort2.jpg" class="w-100 h-100 object-fit-cover" :alt="title" />
       </div>
 
