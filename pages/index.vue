@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="bg-light">
     <!-- CAROUSEL -->
     <Carousel />
 
@@ -35,14 +35,75 @@
     <div class="container">
       <!-- <hr class="w-75 mx-auto mt-5" /> -->
     
+      <div class="container mt-5 ">
+        <h2 class="text-secondary text-center">Find Us</h2>
+        <hr class="mx-auto border-2 pb-3" width="40%" />
+        
+        <div class="map-container row">
+          <div class="col">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m23!1m12!1m3!1d7765.27034305503!2d123.73854947858626!3d13.310715369057535!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m8!3e6!4m5!1s0x33a1adfcc489b175%3A0x16def4e888373db5!2sJann%E2%80%99s%20Spring%20Resort%2C%20Malilipot%2C%20Albay!3m2!1d13.3140179!2d123.73719879999999!4m0!5e0!3m2!1sen!2sph!4v1741663415395!5m2!1sen!2sph"
+              width="100%"
+              height="450"
+              style="border:0;"
+              allowfullscreen
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              class="rounded-4">
+            </iframe>
+          </div>
+          <div class="col-md-6 pt-md-6 pt-lg-0 pt-xl-0 pt-3">
+            <div class="w-100 h-100 rounded-4 pb-3" style="background-color: white;">
+              <div class="pt-5 px-5">
+                <h3 class="h6 text-start fw-light font-jakarta">OUR LOCATION</h3>
+                <p class="h4 py-3">Barangay 1 (Along the Bypass Road) Malilipot, Albay</p>
+                <p class="h6 text-start fw-light font-jakarta">Experience the perfect balance of nature, comfort, and innovation at Janns Spring Resort. Let us take care of everything while you relax and enjoy.</p>
+                <ul class="list-unstyled  ">
+                  <li class="d-flex align-items-center">
+                    <Icon name="material-symbols-light:arrow-right-rounded" size="2rem"/> 
+                    1.3 kms away from the Malilipot Municipal Hall.
+                  </li>
+                  <li class="d-flex align-items-center">
+                    <Icon name="material-symbols-light:arrow-right-rounded" size="2rem"/> 
+                    6.0 kms away from the Tabaco Municipal Hall.
+                  </li>
+                  <li class="d-flex align-items-center">
+                    <Icon name="material-symbols-light:arrow-right-rounded" size="2rem"/> 
+                    9.0 kms away from Bacacay Municipal Hall.
+                  </li>
+                  <li class="d-flex align-items-center">
+                    <Icon name="material-symbols-light:arrow-right-rounded" size="2rem"/> 
+                    21.8 kms away from SM Legazpi City.
+                  </li>
+                </ul>
+                <div class="justify-content-center d-flex">
+                  <Button buttonText="Book Now"  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
     <Testimonials />
   </div>
-
-
   <DefaultTop />
   </div>
 
 </template>
+
+<style scoped>
+
+
+/* .map-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+} */
+</style>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
@@ -52,35 +113,6 @@ import { ref, onMounted, onUnmounted } from 'vue';
 const showModal = ref(false);
 const today1 = ref(new Date().toISOString().split("T")[0]);
 const tomorrow2 = ref(new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split("T")[0]);
-
-
-// Function to format a Date object as YYYY-MM-DD
-
-
-
-// let mybutton = document.getElementById("myBtn");
-
-// // When the user scrolls down 20px from the top of the document, show the button
-// window.onscroll = function() {scrollFunction()};
-
-// function scrollFunction() {
-//   if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-//     mybutton.style.display = "block";
-//     console.log('testss')
-//   } else {
-//     mybutton.style.display = "none";
-//     console.log('testss1')
-//   }
-// }
-
-// // When the user clicks on the button, scroll to the top of the document
-// function topFunction() {
-//   document.body.scrollTop = 0; // For Safari
-//   document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
-// }
-
-
-
 
 
 // SEO meta tags
