@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button class="btn btn-primary">
+    <button :class="['btn btn-primary', dynamicClass]">
       {{ buttonText }}
     </button>
   </div>
@@ -8,6 +8,7 @@
 
 <script setup>
 defineProps({
-  buttonText: String
-})
+  buttonText: String,
+  dynamicClass: String // Accepts additional dynamic class as a prop
+});
 </script>
