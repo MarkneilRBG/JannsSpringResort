@@ -10,6 +10,11 @@
 }*/
 
 /* Chrome, Edge and Safari */
+
+.custom-service-font{
+  font-size: 3.3rem;
+}
+
 *::-webkit-scrollbar {
   height: 6px;
   width: 6px;
@@ -69,6 +74,9 @@ input[type=number] {
   font-family: 'Montserrat', sans-serif;
 }
 
+.font-jakarta {
+  font-family: Plus Jakarta Sans;
+}
 .font-size-footer {
   font-size: 12px;
 }
