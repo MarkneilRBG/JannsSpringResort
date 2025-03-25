@@ -102,9 +102,11 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute } from '#app';
 import { useToast } from 'vue-toastification';
+import { useScrollVisibility } from '~/composables/useScrollVisibility';
 
 const toast = useToast();
-
+const config = useRuntimeConfig();
+const { isNavbarVisible } = useScrollVisibility();
 
 const showPassword = ref(false)
 const togglePassword = () => {
@@ -117,8 +119,7 @@ const togglePassword1 = () => {
 
 const route = useRoute();
 const activeLink = ref('');
-const lastScrollY = ref(0);
-const isNavbarVisible = ref(true);
+
 
 const setActiveLink = (path) => {
   if (path === '/') activeLink.value = 'Home';
@@ -128,20 +129,6 @@ const setActiveLink = (path) => {
   else if (path === '/contact') activeLink.value = 'SignIn';
 };
 
-const handleScroll = () => {
-  const currentScrollY = window.scrollY;
-  isNavbarVisible.value = currentScrollY < lastScrollY.value || currentScrollY <= 10;
-  lastScrollY.value = currentScrollY;
-};
-
-onMounted(() => {
-  setActiveLink(route.path);
-  window.addEventListener('scroll', handleScroll);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-});
 
 watch(() => route.path, (newPath) => setActiveLink(newPath));
 
@@ -168,7 +155,7 @@ const register = async () => {
   }
 
   try {
-    const { data, error } = await useFetch('http://127.0.0.1:8000/api/register', {
+    const { data, error } = await useFetch(`${config.public.apiBase}/api/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -209,6 +196,7 @@ const register = async () => {
     });
   }
 };
+
 
 
 
