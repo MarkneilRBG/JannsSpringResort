@@ -48,9 +48,9 @@
             <div class="mb-3">
               <label class="form-label">Confirm Password</label>
               <div class="input-group">
-                <input v-model="confirmPassword" :type="showPassword1 ? 'text' : 'password'" class="form-control rounded-2" placeholder="Enter your password"/>
+                <input v-model="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" class="form-control rounded-2" placeholder="Enter your password"/>
                 <span class="input-group-text password-toggle" @click="togglePassword1">
-                  <Icon :name="showPassword1 ? 'tabler:eye-off' : 'tabler:eye'" class="text-secondary pointer"/>
+                  <Icon :name="showConfirmPassword ? 'tabler:eye-off' : 'tabler:eye'" class="text-secondary pointer"/>
                 </span>
               </div>
             </div>
@@ -70,7 +70,6 @@
 <script setup>
 import { ref } from 'vue';
 import { useToast } from 'vue-toastification';
-import { useAsyncData } from 'nuxt/app';
 
 const toast = useToast();
 
@@ -80,10 +79,10 @@ const birthDate = ref('');
 const password = ref('');
 const confirmPassword = ref('');
 const showPassword = ref(false);
-const showPassword1 = ref(false);
+const showConfirmPassword = ref(false);
 
 const togglePassword = () => (showPassword.value = !showPassword.value);
-const togglePassword1 = () => (showPassword1.value = !showPassword1.value);
+const togglePassword1 = () => (showConfirmPassword.value = !showConfirmPassword.value);
 
 const register = async () => {
   if (password.value !== confirmPassword.value) {
@@ -92,32 +91,33 @@ const register = async () => {
   }
 
   try {
-    const { data, error } = await useAsyncData('register', () =>
-      $fetch('http://127.0.0.1:8000/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: {
-          name: name.value,
-          email: email.value,
-          birthdate: birthDate.value,
-          password: password.value,
-          password_confirmation: confirmPassword.value,
-        },
-      })
-    );
+    const config = useRuntimeConfig();
 
-    if (error.value) {
-      toast.error(error.value.data?.message || 'Registration failed', { timeout: 3000 });
-    } else {
-      toast.success('Account created successfully!', { timeout: 2000 });
-      name.value = email.value = birthDate.value = password.value = confirmPassword.value = '';
-    }
-  } catch (err) {
-    toast.error('An unexpected error occurred.', { timeout: 3000 });
+    const data = await $fetch(`${config.public.apiBase}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: {
+        name: name.value,
+        email: email.value,
+        birthdate: birthDate.value,
+        password: password.value,
+        password_confirmation: confirmPassword.value,
+      },
+    });
+
+    // ✅ Success handling
+    toast.success('Account created successfully!', { timeout: 2000 });
+    name.value = email.value = birthDate.value = password.value = confirmPassword.value = '';
+
+  } catch (error) {
+    console.error("API Error:", error);
+
+    // ✅ Proper error handling
+    toast.error(error?.data?.message || 'Registration failed', { timeout: 3000 });
   }
 };
-</script>
 
+</script>
 
 <style scoped>
 .modal-header-register {
