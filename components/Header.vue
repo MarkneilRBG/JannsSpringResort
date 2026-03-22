@@ -4,41 +4,45 @@
       class="navbar navbar-expand-lg navbar-light fixed-top text-primary bg-dark bg-opacity-75"
       :class="{ 'hidden-navbar': !isNavbarVisible }"
       style="width: 100vw; overflow: hidden; transition: transform 0.3s ease-in-out;">
-      <div class="container d-flex justify-content-between">
-        <NuxtLink class="navbar-brand" to="#">Janns</NuxtLink>
+      <div class="container d-flex align-items-center justify-content-between">
+        
         <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarSupportedContent"
-          aria-controls="navbarSupportedContent"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
         >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
-          <ul class="navbar-nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse justify-content-center" id="navbarSupportedContent">
+        <ul class="navbar-nav d-flex align-items-center gap-4">
+          <li class="nav-item">
+            <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Home'}" to="/">Home</NuxtLink>
+          </li>
+          <!-- <li class="nav-item">
+            <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'About'}" to="/about">About</NuxtLink>
+          </li> -->
+          <li class="nav-item">
+            <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Amenities'}" to="/amenities">Amenities</NuxtLink>
+          </li>
+          <NuxtLink class="navbar-brand text-white fw-bold fs-2 mb-0" to="/">Janns</NuxtLink>
+          <li class="nav-item">
+            <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Services'}" to="/services">Services</NuxtLink>
+          </li>
             <li class="nav-item">
-              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Home'}" to="/">Home</NuxtLink>
+              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Contact'}" to="/contact">Contact Us</NuxtLink>
             </li>
-            <li class="nav-item">
-              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'About'}" to="about">About</NuxtLink>
-            </li>
-            <li class="nav-item">
-              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Services'}" to="services">Services</NuxtLink>
-            </li>
-            <li class="nav-item">
-              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'Contact'}" to="contact">Contact</NuxtLink>
-           
-            </li>
-            <li class="nav-item">
-              <NuxtLink data-bs-toggle="modal" data-bs-target="#loginModal" class="nav-link" :class="{ 'active-link': activeLink === 'SignIn'}" to="contact">Sign In</NuxtLink>
-           
-            </li>
+            <!-- <li class="nav-item">
+              <NuxtLink class="nav-link" :class="{ 'active-link': activeLink === 'SignIn'}" data-bs-toggle="modal" data-bs-target="#loginModal" to="/contact">Sign In</NuxtLink>
+            </li> -->
           </ul>
         </div>
       </div>
+
     </nav>
 
     <!-- Modal for sign in -->
@@ -123,7 +127,7 @@ const activeLink = ref('');
 
 const setActiveLink = (path) => {
   if (path === '/') activeLink.value = 'Home';
-  else if (path === '/about') activeLink.value = 'About';
+  else if (path === '/amenities') activeLink.value = 'Amenities';
   else if (path === '/services') activeLink.value = 'Services';
   else if (path === '/contact') activeLink.value = 'Contact';
   else if (path === '/contact') activeLink.value = 'SignIn';

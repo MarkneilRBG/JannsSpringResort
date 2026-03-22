@@ -5,7 +5,7 @@
 
     <!-- ABOUT  -->
     <div class="text-center mt-5 container px-md-12">
-      <p class="font-tnr fs-1 text-secondary">Janns Spring Resort</p>
+      <p class="font-tnr fs-1 text-secondary pt-5">Janns Spring Resort</p>
       <hr class="mx-auto border-2" width="40%" />
       <p class="font-carattere fs-1 text-secondary">Embrace the calm of nature</p>
       <p class="custom-padding-about text-secondary font-montserrat">
@@ -37,7 +37,7 @@
     
       <div class="container mt-5 ">
         <h2 class="text-secondary text-center">Find Us</h2>
-        <hr class="mx-auto border-2 pb-3" width="40%" />
+        <hr class="mx-auto border-2 pb-3 w-50"  />
         
         <div class="map-container row">
           <div class="col">
@@ -76,9 +76,9 @@
                     21.8 kms away from SM Legazpi City.
                   </li>
                 </ul>
-                <div class="justify-content-center d-flex">
+                <!-- <div class="justify-content-center d-flex">
                   <Button buttonText="Book Now"  />
-                </div>
+                </div> -->
               </div>
             </div>
           </div>
