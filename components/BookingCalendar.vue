@@ -104,7 +104,7 @@
 
             <div class="row">
               <div class="col-md-6 mb-4" v-for="room in rooms" :key="room.name">
-                <div class="room-card" :class="{ selected: selectedRoom === room.name }">
+                <div class="room-card" :class="{ selected: selectedRooms.some(r => r.name === room.name) }">
                   <img :src="room.image" />
                   <div class="p-3">
                     <h5>{{ room.name }}</h5>
@@ -114,7 +114,7 @@
                       class="btn btn-select w-100"
                       @click="selectRoom(room)"
                     >
-                      {{ selectedRoom === room.name ? 'SELECTED' : 'SELECT' }}
+                     {{ selectedRooms.some(r => r.name === room.name) ? 'SELECTED' : 'SELECT' }}
                     </button>
                   </div>
                 </div>
@@ -130,12 +130,24 @@
               <div class="summary-box">
                 <p>Date: {{ formatDate(checkIn) }} - {{ formatDate(checkOut) }} </p>
                 <p>Guests: {{ guests }}</p>
-                <p v-if="selectedRoom">Room: {{ selectedRoom }}</p>
+                <div v-if="selectedRooms.length">
+                  <p v-for="room in selectedRooms" :key="room.name">
+                    {{ room.name }} - PHP {{ room.price }}
+                  </p>
+
+                  <p>Nights: {{ nights }}</p>
+                  <p><strong>Total: PHP {{ totalPrice }}</strong></p>
+                </div>
+
+                <hr />
+
+                <p>Check-in Time: 03:00 PM</p>
+                <p>Check-out Time: 12:00 PM</p>
               </div>
 
               <button
                 class="btn btn-continue w-100 mt-3"
-                :disabled="!selectedRoom"
+                :disabled="selectedRooms.length === 0"
                 @click="goNextStep(3)"
               >
                 CONTINUE
@@ -200,7 +212,19 @@
         <div class="summary-box">
           <p>Date: {{ formatDate(checkIn) }} - {{ formatDate(checkOut) }}</p>
           <p>Guests: {{ guests }}</p>
-          <p v-if="selectedRoom">Room: {{ selectedRoom }}</p>
+          <div v-if="selectedRooms.length">
+            <p v-for="room in selectedRooms" :key="room.name">
+              {{ room.name }} - PHP {{ room.price }}
+            </p>
+
+            <p>Nights: {{ nights }}</p>
+            <p><strong>Total: PHP {{ totalPrice }}</strong></p>
+          </div>
+
+        <hr />
+
+        <p>Check-in Time: 03:00 PM</p>
+        <p>Check-out Time: 12:00 PM</p>
         </div>
 
         <button
@@ -226,7 +250,7 @@ const maxStep = ref(1)
 const checkIn = ref("2026-03-30")
 const checkOut = ref("2026-03-31")
 const guests = ref(1)
-const selectedRoom = ref(null)
+const selectedRooms = ref([])
 
 const goNextStep = (nextStep) => {
   step.value = nextStep
@@ -271,19 +295,27 @@ const formatDate = (date) => {
 
 const rooms = [
   {
-    name: "Beach Cabin",
+    name: "Malobago Cabin",
     price: "5,000",
     image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85"
   },
   {
-    name: "Garden Cabin",
+    name: "Talisay Cabin",
     price: "6,500",
     image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2"
   }
 ]
 
 const selectRoom = (room) => {
-  selectedRoom.value = room.name
+  const index = selectedRooms.value.findIndex(r => r.name === room.name)
+
+  if (index > -1) {
+    // remove if already selected
+    selectedRooms.value.splice(index, 1)
+  } else {
+    // add room
+    selectedRooms.value.push(room)
+  }
 }
 
 const goToStep = (targetStep) => {
@@ -291,6 +323,13 @@ const goToStep = (targetStep) => {
     step.value = targetStep
   }
 }
+
+const totalPrice = computed(() => {
+  return selectedRooms.value.reduce((total, room) => {
+    const price = parseInt(room.price.replace(',', ''))
+    return total + (price * nights.value)
+  }, 0)
+})
 </script>
 
 <style scoped>
@@ -396,4 +435,12 @@ const goToStep = (targetStep) => {
   border: none;
   font-weight: bold;
 }
+
+/* .summary-box p {
+  margin-bottom: 6px;
+}
+
+.summary-box strong {
+  font-size: 16px;
+} */
 </style>
