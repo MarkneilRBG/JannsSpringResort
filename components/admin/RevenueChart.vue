@@ -14,20 +14,12 @@
 
         <!-- TYPE -->
         <select v-model="filter" class="form-select w-auto">
-          <option value="week">Weekly</option>
-          <option value="month">Monthly</option>
-          <option value="year">Yearly</option>
+          <option value="week">Daily</option>
+          <option value="year">Monthly</option>
         </select>
 
-        <!-- RANGE (ONLY WEEKLY) -->
-        <select v-if="filter === 'week'" v-model="range" class="form-select w-auto">
-          <option :value="7">7 days</option>
-          <option :value="14">14 days</option>
-          <option :value="30">30 days</option>
-        </select>
-
-        <!-- MONTH (ONLY MONTH VIEW) -->
-        <select v-if="filter === 'month'" v-model="selectedMonth" class="form-select w-auto">
+        <!-- MONTH (for DAILY) -->
+        <select v-if="filter === 'week'" v-model="selectedMonth" class="form-select w-auto">
           <option v-for="(m, i) in months" :key="i" :value="i">
             {{ m }}
           </option>
@@ -50,114 +42,74 @@
     </div>
 
     <!-- CHART -->
-    <Line :data="chartData" :options="chartOptions" />
+    <Bar :data="chartData" :options="chartOptions" />
 
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Line } from 'vue-chartjs'
+import { Bar } from 'vue-chartjs'
 import {
   Chart as ChartJS,
   Title,
   Tooltip,
   Legend,
-  LineElement,
+  BarElement,
   CategoryScale,
-  LinearScale,
-  PointElement
+  LinearScale
 } from 'chart.js'
 
 ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  LineElement,
+  BarElement,
   CategoryScale,
-  LinearScale,
-  PointElement
+  LinearScale
 )
 
-/* =========================
-   STATE
-========================= */
-const filter = ref('week')
-const range = ref(7)
+/* STATE */
+const filter = ref('week') // week = Daily
 const selectedMonth = ref(new Date().getMonth())
 const selectedCabin = ref('all')
 
-/* =========================
-   BOOKINGS DATA (REPLACE LATER)
-========================= */
+/* DATA */
 const bookings = [
   { date: '2026-01-10', price: 2000, cabin: 'Malobago' },
-  { date: '2026-02-15', price: 1500, cabin: 'Talisay' },
+  { date: '2026-01-15', price: 1800, cabin: 'Talisay' },
+  { date: '2026-02-05', price: 1500, cabin: 'Talisay' },
   { date: '2026-03-20', price: 1800, cabin: 'Malobago' },
   { date: '2026-04-01', price: 1500, cabin: 'Malobago' },
   { date: '2026-04-03', price: 2000, cabin: 'Talisay' }
 ]
 
-/* =========================
-   FILTER CABIN
-========================= */
+/* FILTER */
 const filteredBookings = computed(() => {
   if (selectedCabin.value === 'all') return bookings
   return bookings.filter(b => b.cabin === selectedCabin.value)
 })
 
-/* =========================
-   TOTAL
-========================= */
+/* TOTAL */
 const totalRevenue = computed(() => {
   return filteredBookings.value.reduce((sum, b) => sum + b.price, 0)
 })
 
-/* =========================
-   HELPERS
-========================= */
 const months = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December'
 ]
 
-/* =========================
-   WEEKLY
-========================= */
-const generateWeeklyRevenue = (days) => {
-  const today = new Date()
-
-  return Array.from({ length: days }, (_, i) => {
-    const d = new Date()
-    d.setDate(today.getDate() - (days - 1 - i))
-
-    return filteredBookings.value
-      .filter(b => new Date(b.date).toDateString() === d.toDateString())
-      .reduce((sum, b) => sum + b.price, 0)
-  })
-}
-
-const generateDates = (days) => {
-  const today = new Date()
-
-  return Array.from({ length: days }, (_, i) => {
-    const d = new Date()
-    d.setDate(today.getDate() - (days - 1 - i))
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  })
-}
-
-/* =========================
-   MONTHLY (BY DAY)
-========================= */
-const generateMonthlyRevenue = (monthIndex) => {
+/* DAILY (BY MONTH) */
+const generateDailyByMonth = (monthIndex) => {
   const year = new Date().getFullYear()
-  const days = new Date(year, monthIndex + 1, 0).getDate()
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
 
-  const result = Array(days).fill(0)
+  const result = Array(daysInMonth).fill(0)
 
   filteredBookings.value.forEach(b => {
     const d = new Date(b.date)
+
     if (d.getMonth() === monthIndex) {
       result[d.getDate() - 1] += b.price
     }
@@ -166,9 +118,7 @@ const generateMonthlyRevenue = (monthIndex) => {
   return result
 }
 
-/* =========================
-   YEARLY (BY MONTH 🔥)
-========================= */
+/* MONTHLY (YEAR VIEW) */
 const generateYearlyRevenue = () => {
   const result = Array(12).fill(0)
 
@@ -180,55 +130,43 @@ const generateYearlyRevenue = () => {
   return result
 }
 
-/* =========================
-   CHART DATA
-========================= */
+/* CHART DATA */
 const chartData = computed(() => {
 
+  const baseDataset = {
+    backgroundColor: '#3b82f6',
+    borderRadius: 6,
+    barThickness: 20
+  }
+
+  // MONTHLY VIEW (Jan–Dec)
   if (filter.value === 'year') {
     return {
       labels: months,
       datasets: [{
-        data: generateYearlyRevenue(),
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59,130,246,0.1)',
-        tension: 0.4,
-        fill: true
+        ...baseDataset,
+        data: generateYearlyRevenue()
       }]
     }
   }
 
-  if (filter.value === 'month') {
-    return {
-      labels: Array.from(
-        { length: new Date(2026, selectedMonth.value + 1, 0).getDate() },
-        (_, i) => i + 1
-      ),
-      datasets: [{
-        data: generateMonthlyRevenue(selectedMonth.value),
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59,130,246,0.1)',
-        tension: 0.4,
-        fill: true
-      }]
-    }
-  }
+  // DAILY VIEW (1–31 of selected month)
+  const daysInMonth = new Date(
+    new Date().getFullYear(),
+    selectedMonth.value + 1,
+    0
+  ).getDate()
 
   return {
-    labels: generateDates(range.value),
+    labels: Array.from({ length: daysInMonth }, (_, i) => i + 1),
     datasets: [{
-      data: generateWeeklyRevenue(range.value),
-      borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59,130,246,0.1)',
-      tension: 0.4,
-      fill: true
+      ...baseDataset,
+      data: generateDailyByMonth(selectedMonth.value)
     }]
   }
 })
 
-/* =========================
-   OPTIONS
-========================= */
+/* OPTIONS */
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
