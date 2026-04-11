@@ -11,6 +11,7 @@
 
       <form @submit.prevent="handleLogin">
 
+
         <!-- Email -->
         <div class="mb-3">
           <label class="form-label small fw-semibold">Email</label>
@@ -46,11 +47,6 @@
           </div>
         </div>
 
-        <!-- Error -->
-        <div v-if="error" class="alert alert-danger py-2 small">
-          {{ error }}
-        </div>
-
         <!-- Button -->
         <button
           type="submit"
@@ -69,11 +65,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { useToast } from 'vue-toastification'
 
 definePageMeta({
   layout: 'auth'
 })
+
+const toast = useToast()
 
 const form = ref({
   email: '',
@@ -82,24 +81,12 @@ const form = ref({
 
 const showPassword = ref(false)
 const loading = ref(false)
-const error = ref('')
 
-// ✅ Use composable
 const { apiFetch } = useApi()
 
-// ✅ Redirect if already logged in
-onMounted(() => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    navigateTo('/admin')
-  }
-})
-
 const handleLogin = async () => {
-  error.value = ''
   loading.value = true
-  console.log('LOGIN CLICKED')
-  console.log(useRuntimeConfig().public.apiBase)
+
   try {
     const res = await apiFetch('/login', {
       method: 'POST',
@@ -112,19 +99,27 @@ const handleLogin = async () => {
     token.value = res.token
     user.value = res.user
 
-    // ✅ Redirect
-    await navigateTo('/admin')
+    // ✅ Show toast
+    toast.success(res.message || 'Login successful')
+
+    // ✅ WAIT before redirect (match toast timeout)
+    setTimeout(() => {
+      navigateTo('/admin')
+    }, 2000)
 
   } catch (err) {
-    console.log(err)
+    console.log('FULL ERROR:', err)
 
-    if (err?.status === 422) {
-      error.value = 'Please fill all fields correctly'
-    } else if (err?.status === 401) {
-      error.value = 'Invalid email or password'
-    } else {
-      error.value = err?.data?.message || 'Login failed'
+    let message = 'Something went wrong'
+
+    if (err?.response?._data?.errors) {
+      message = Object.values(err.response._data.errors)[0][0]
+    } else if (err?.response?._data?.message) {
+      message = err.response._data.message
     }
+
+    toast.error(message)
+
   } finally {
     loading.value = false
   }
@@ -132,40 +127,31 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-
-/* PAGE */
 .login-page {
   position: relative;
   min-height: 100vh;
   width: 100%;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   overflow: hidden;
 }
 
-/* BACKGROUND */
 .login-page::before {
   content: "";
   position: absolute;
   inset: 0;
-
   background: url('/resort.jpg') center/cover no-repeat;
-
   filter: blur(6px) brightness(0.85);
   transform: scale(1.03);
   z-index: 0;
 }
 
-/* CONTENT ABOVE */
 .login-page > * {
   position: relative;
   z-index: 1;
 }
 
-/* CARD */
 .login-card {
   max-width: 360px;
   width: 100%;
@@ -173,7 +159,6 @@ const handleLogin = async () => {
   border-radius: 16px;
 }
 
-/* PASSWORD INPUT (CLEAN FIX) */
 .password-group {
   border-radius: 10px;
   overflow: hidden;
@@ -203,7 +188,6 @@ const handleLogin = async () => {
   box-shadow: none;
 }
 
-/* BUTTON */
 .btn-primary {
   background: #0d6efd;
   border: none;
@@ -212,5 +196,4 @@ const handleLogin = async () => {
 .btn-primary:hover {
   background: #0b5ed7;
 }
-
 </style>

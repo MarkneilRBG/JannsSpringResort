@@ -14,14 +14,16 @@ export const useApi = () => {
         }
       })
     } catch (err) {
-      // 🔥 Auto logout if unauthorized
-      if (err?.status === 401) {
+
+      // ✅ ONLY auto-logout if NOT login request
+      if (err?.status === 401 && url !== '/login') {
         token.value = null
         useCookie('user').value = null
 
         return navigateTo('/admin/login')
       }
 
+      // ✅ Let login page handle error
       throw err
     }
   }
