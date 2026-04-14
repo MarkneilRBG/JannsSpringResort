@@ -66,6 +66,11 @@
                 <option :value="false">No</option>
               </select>
             </div>
+
+            <div class="col-md-6">
+            <label class="form-label">Paid</label>
+            <input v-model="form.paid" type="number" class="form-control form-control-sm" />
+          </div>
           </div>
 
           <!-- PRICE -->
@@ -139,6 +144,7 @@ const form = ref({
   time: "8:00 AM - 5:00 PM",
   guests: 1,
   videoke: false,
+  paid: 0,
 });
 
 /* =========================
@@ -148,17 +154,33 @@ watch(
   () => props.editData,
   (val) => {
     if (val) {
-      const start = new Date(val.start_datetime);
+      const start = parseLocal(val.start_datetime)
 
       form.value = {
-        ...val,
+        ...form.value,
+        name: val.name,
+        address: val.address,
+        cabin: val.cabin,
+        guests: val.guests,
+        videoke: val.videoke,
+
         date: start.toISOString().split("T")[0],
-        time: detectTimeRange(val.start_datetime, val.end_datetime)
-      };
+
+        time: detectTimeRange(
+          val.start_datetime,
+          val.end_datetime
+        )
+      }
     }
   },
   { immediate: true }
 );
+
+const parseLocal = (dt) => {
+  if (!dt) return null
+  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0]
+  return new Date(clean)
+}
 
 /* =========================
    TIME GENERATION
@@ -208,11 +230,15 @@ const generateDateTime = () => {
 };
 
 const detectTimeRange = (start, end) => {
-  const s = new Date(start);
-  const e = new Date(end);
+  const s = parseLocal(start);
+  const e = parseLocal(end);
+
+  if (!s || !e) return "8:00 AM - 5:00 PM";
 
   if (s.getHours() === 8 && e.getHours() === 17) return "8:00 AM - 5:00 PM";
+
   if (s.getHours() === 19 && e.getHours() === 7) return "7:00 PM - 7:00 AM";
+
   if (s.getHours() === 14 && e.getHours() === 0) return "2:00 PM - 12:00 AM";
 
   return "8:00 AM - 5:00 PM";
@@ -279,7 +305,8 @@ const submit = () => {
     videoke: form.value.videoke,
     amount: totalAmount.value,
     start_datetime,
-    end_datetime
+    end_datetime,
+    paid: form.value.paid || 0,
   });
 
   form.value = {
@@ -290,6 +317,7 @@ const submit = () => {
     time: "8:00 AM - 5:00 PM",
     guests: 1,
     videoke: false,
+    paid: form.value.paid || 0,
   };
 
   closeModal();
