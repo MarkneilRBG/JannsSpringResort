@@ -67,9 +67,6 @@ import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 
-/* =========================
-   PROPS (FROM BACKEND)
-========================= */
 const props = defineProps({
   bookings: {
     type: Array,
@@ -77,41 +74,46 @@ const props = defineProps({
   }
 })
 
-/* =========================
-   STATE
-========================= */
 const selectedEvent = ref(null)
 const showModal = ref(false)
 const selectedCabin = ref('Malobago')
 
 /* =========================
-   DEBUG (REMOVE LATER)
+   DEBUG
 ========================= */
 watch(() => props.bookings, (val) => {
   console.log("🔥 CALENDAR RECEIVED:", val)
 })
 
 /* =========================
+   🔥 FIX DATETIME PARSER
+========================= */
+const parseLocal = (dt) => {
+  if (!dt) return null
+  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0]
+  return new Date(clean)
+}
+
+/* =========================
    HELPERS
 ========================= */
 const getColor = (b) => {
-  if (b.paid >= b.amount) return '#10b981' // green
-  if (b.paid > 0) return '#f59e0b' // yellow
-  return '#dc3545' // red
+  if (b.paid >= b.amount) return '#10b981'
+  if (b.paid > 0) return '#f59e0b'
+  return '#dc3545'
 }
 
-const formatTime = (time) => {
-  if (!time) return ''
-  if (time.includes('AM') || time.includes('PM')) return time
-
-  return new Date(`1970-01-01T${time}`).toLocaleTimeString([], {
+const formatTime = (dt) => {
+  const d = parseLocal(dt)
+  if (!d) return ''
+  return d.toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit'
   })
 }
 
 /* =========================
-   EVENTS (FROM BACKEND)
+   🔥 EVENTS (FIXED)
 ========================= */
 const events = computed(() => {
   return (props.bookings || [])
@@ -120,25 +122,21 @@ const events = computed(() => {
         .toLowerCase()
         .includes(selectedCabin.value.toLowerCase())
     )
-    .sort((a, b) => {
-      if (a.date === b.date) {
-        return a.time === 'AM' ? -1 : 1
-      }
-      return new Date(a.date) - new Date(b.date)
-    })
     .map(b => {
-      const initial = b.name?.charAt(0).toUpperCase() || ''
+      const start = parseLocal(b.start_datetime)
+      const end = parseLocal(b.end_datetime)
 
       return {
         id: b.id,
-        title: `${formatTime(b.time)} - ${initial}. ${b.name}`,
-        date: b.date,
+        title: `${formatTime(b.start_datetime)} - ${b.name}`,
+        start: start,
+        end: end, // 🔥 THIS ENABLES OVERNIGHT
         color: getColor(b),
         extendedProps: {
           fullName: b.name,
-          shift: b.time,
-          status: b.paid >= b.amount ? 'paid' : 'unpaid',
-          cabin: b.cabin
+          cabin: b.cabin,
+          paid: b.paid,
+          amount: b.amount
         }
       }
     })
@@ -151,11 +149,14 @@ const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin],
   initialView: 'dayGridMonth',
   height: 'auto',
+
+  timeZone: 'local', // 🔥 CRITICAL FIX
+
   events: events.value,
 
   eventDidMount(info) {
-    const { fullName, shift, status } = info.event.extendedProps
-    info.el.title = `${shift} - ${fullName} (${status})`
+    const { fullName } = info.event.extendedProps
+    info.el.title = fullName
   },
 
   eventClick(info) {
@@ -168,9 +169,6 @@ const calendarOptions = computed(() => ({
   }
 }))
 
-/* =========================
-   SAVE (UI ONLY)
-========================= */
 const saveBooking = () => {
   console.log("Edited:", selectedEvent.value)
   showModal.value = false

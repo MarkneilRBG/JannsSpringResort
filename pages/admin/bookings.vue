@@ -33,7 +33,6 @@ definePageMeta({
   layout: "admin"
 });
 
-// 🔥 USE GLOBAL API
 const { $api } = useNuxtApp();
 
 // STATE
@@ -42,10 +41,12 @@ const loading = ref(false);
 const currentPage = ref(1);
 const lastPage = ref(1);
 
-// FILTERS
+// FILTER
 const selectedDate = ref(null);
 
-// FETCH BOOKINGS
+/* =========================
+   🔥 FETCH BOOKINGS
+========================= */
 const fetchBookings = async (page = 1) => {
   loading.value = true;
 
@@ -53,31 +54,34 @@ const fetchBookings = async (page = 1) => {
     const res = await $api('/bookings', {
       params: {
         page,
-        date: selectedDate.value,
+        date: selectedDate.value, // we will handle backend logic
       },
     });
 
-    console.log("API RESPONSE:", res); // 🔥 ADD THIS
-
-    bookings.value = res.data; // ✅ correct for Laravel
+    // ✅ FIX RESPONSE STRUCTURE
+    bookings.value = res.data;
     currentPage.value = res.current_page;
     lastPage.value = res.last_page;
 
   } catch (error) {
-    console.error(error);
+    console.error("FETCH ERROR:", error);
   } finally {
     loading.value = false;
   }
 };
-console.log("BOOKINGS:", bookings.value);
 
-// INITIAL LOAD
+/* =========================
+   🔥 INITIAL LOAD
+========================= */
 onMounted(() => {
   fetchBookings();
 });
 
-// 📅 CALENDAR CLICK
+/* =========================
+   🔥 CALENDAR FILTER
+========================= */
 const handleDateFilter = (date) => {
+  // convert to YYYY-MM-DD
   selectedDate.value = new Date(date).toISOString().split("T")[0];
   fetchBookings(1);
 };

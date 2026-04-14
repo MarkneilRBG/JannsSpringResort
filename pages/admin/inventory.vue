@@ -3,41 +3,37 @@
     <h4 class="mb-3 fw-bold">Inventory</h4>
 
     <!-- FILTERS -->
-   <div class="d-flex align-items-center gap-2 mb-3">
-    <!-- SEARCH -->
-    <input
-      v-model="search"
-      type="text"
-      class="form-control"
-      style="width: 250px; height: 42px;"
-      placeholder="Search name, address..."
-      @input="handleSearch"
-    />
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <input
+        v-model="search"
+        type="text"
+        class="form-control"
+        style="width: 250px; height: 42px;"
+        placeholder="Search name, address..."
+        @input="handleSearch"
+      />
 
-    <!-- STATUS FILTER -->
-    <select
-      v-model="status"
-      class="form-select"
-      style="width: 180px; height: 42px;"
-      @change="fetchBookings(1)"
-    >
-      <option value="">All</option>
-      <option value="paid">Fully Paid</option>
-      <option value="unpaid">Unpaid</option>
-    </select>
+      <select
+        v-model="status"
+        class="form-select"
+        style="width: 180px; height: 42px;"
+        @change="fetchBookings(1)"
+      >
+        <option value="">All</option>
+        <option value="paid">Fully Paid</option>
+        <option value="unpaid">Unpaid</option>
+      </select>
 
-    <!-- ADD BUTTON -->
-    <button
-      class="btn btn-primary ms-auto"
-      style="height: 42px;"
-      data-bs-toggle="modal"
-      data-bs-target="#addBookingModal"
-      @click="openAdd"
-    >
-      + Add Booking
-    </button>
-
-  </div>
+      <button
+        class="btn btn-primary ms-auto"
+        style="height: 42px;"
+        data-bs-toggle="modal"
+        data-bs-target="#addBookingModal"
+        @click="openAdd"
+      >
+        + Add Booking
+      </button>
+    </div>
 
     <!-- TABLE -->
     <div class="card shadow-sm border-0">
@@ -48,8 +44,7 @@
               <th>Name</th>
               <th>Address</th>
               <th>Cabin</th>
-              <th>Date</th>
-              <th>Time</th>
+              <th>Schedule</th>
               <th>Guests</th>
               <th>Videoke</th>
               <th>Amount</th>
@@ -62,7 +57,7 @@
           <tbody>
             <!-- LOADING -->
             <tr v-if="loading">
-              <td colspan="11" class="text-center py-4">
+              <td colspan="10" class="text-center py-4">
                 <div class="spinner-border text-primary"></div>
               </td>
             </tr>
@@ -71,9 +66,52 @@
             <tr v-else-if="inventory.length > 0" v-for="item in inventory" :key="item.id">
               <td>{{ item.name }}</td>
               <td>{{ item.address }}</td>
-              <td><span class="badge bg-info text-dark">{{ item.cabin }}</span></td>
-              <td>{{ formatDate(item.start_datetime) }}</td>
-              <td><span class="badge bg-warning text-dark">{{ formatTime(item.start_datetime) }} - {{ formatTime(item.end_datetime) }}</span></td>
+
+              <!-- ✅ REMOVED BADGE -->
+              <td class="fw-semibold text-muted">
+                {{ item.cabin }}
+              </td>
+
+              <!-- ✅ CLEAN SCHEDULE -->
+              <td>
+                <div class="d-flex flex-column" style="font-size: 13px;">
+
+                  <!-- DATE -->
+                  <div class="d-flex align-items-center gap-1 fw-semibold">
+                    <Icon name="mdi:calendar" size="14" />
+
+                    <span>
+                      {{ formatFullDate(item.start_datetime) }}
+
+                      <span v-if="isOvernight(item)">
+                        → {{ formatFullDate(item.end_datetime) }}
+                      </span>
+                    </span>
+
+                    <span
+                      v-if="isOvernight(item)"
+                      class="badge bg-danger-subtle text-danger ms-2 px-2 py-1 d-inline-flex align-items-center gap-1"
+                      style="font-size: 10px; border-radius: 6px;"
+                    >
+                      <Icon name="mdi:weather-night" size="10" />
+                      
+                    </span>
+                  </div>
+
+                  <!-- TIME -->
+                  <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 12px;">
+                    <Icon name="mdi:clock-outline" size="14" />
+
+                    <span>
+                      {{ formatTime(item.start_datetime) }}
+                      →
+                      {{ formatTime(item.end_datetime) }}
+                    </span>
+                  </div>
+
+                </div>
+              </td>
+
               <td>{{ item.guests }}</td>
 
               <td>
@@ -93,9 +131,7 @@
               </td>
 
               <td>
-                <span
-                  :class="getBalance(item) === 0 ? 'text-success' : 'text-danger'"
-                >
+                <span :class="getBalance(item) === 0 ? 'text-success' : 'text-danger'">
                   ₱{{ formatMoney(getBalance(item)) }}
                 </span>
               </td>
@@ -128,7 +164,9 @@
 
             <!-- EMPTY -->
             <tr v-else>
-              <td colspan="11" class="text-center py-3">No records found.</td>
+              <td colspan="10" class="text-center py-3">
+                No records found.
+              </td>
             </tr>
           </tbody>
         </table>
@@ -197,7 +235,6 @@ const status = ref("");
 
 let debounceTimeout = null;
 
-// FETCH WITH FILTERS
 const fetchBookings = async (page = 1) => {
   loading.value = true;
 
@@ -221,7 +258,6 @@ const fetchBookings = async (page = 1) => {
 
 onMounted(() => fetchBookings());
 
-// 🔍 SEARCH (DEBOUNCED)
 const handleSearch = () => {
   clearTimeout(debounceTimeout);
   debounceTimeout = setTimeout(() => {
@@ -229,8 +265,58 @@ const handleSearch = () => {
   }, 400);
 };
 
-// HELPERS
+/* =========================
+   🔥 FIXED DATETIME PARSER
+========================= */
+const parseLocal = (dt) => {
+  if (!dt) return null;
+
+  // remove UTC conversion
+  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0];
+  return new Date(clean);
+};
+
+/* =========================
+   FORMATTERS
+========================= */
+const formatFullDate = (dt) => {
+  const d = parseLocal(dt);
+  if (!d) return "";
+
+  return d.toLocaleDateString([], {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const formatTime = (dt) => {
+  const d = parseLocal(dt);
+  if (!d) return "";
+
+  return d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+/* =========================
+   🔥 OVERNIGHT DETECTION
+========================= */
+const isOvernight = (item) => {
+  const start = parseLocal(item.start_datetime);
+  const end = parseLocal(item.end_datetime);
+
+  if (!start || !end) return false;
+
+  return start.toDateString() !== end.toDateString();
+};
+
+/* =========================
+   HELPERS
+========================= */
 const formatMoney = (v) => Number(v).toLocaleString();
+
 const getBalance = (i) => i.amount - i.paid;
 
 const getPaymentStatus = (i) =>
@@ -239,7 +325,9 @@ const getPaymentStatus = (i) =>
 const getPaymentStatusClass = (i) =>
   i.paid >= i.amount ? "bg-success" : "bg-warning text-dark";
 
-// ACTIONS
+/* =========================
+   ACTIONS
+========================= */
 const selectedItem = ref(null);
 const selectedPaymentItem = ref(null);
 
@@ -252,24 +340,19 @@ const addPayment = (i) => {
 };
 
 const handlePaymentConfirm = async (amount) => {
-  await axios.post(`${API_URL}/bookings/${selectedPaymentItem.value.id}/payment`, { amount });
+  await axios.post(
+    `${API_URL}/bookings/${selectedPaymentItem.value.id}/payment`,
+    { amount }
+  );
   fetchBookings(currentPage.value);
 };
 
 const handleSave = async (data) => {
-  // Convert to proper datetime format
-  data.start_datetime = new Date(data.start_datetime)
-    .toISOString()
-    .slice(0, 19)
-    .replace('T', ' ');
-
-  data.end_datetime = new Date(data.end_datetime)
-    .toISOString()
-    .slice(0, 19)
-    .replace('T', ' ');
-
   if (selectedItem.value) {
-    await axios.put(`${API_URL}/bookings/${selectedItem.value.id}`, data);
+    await axios.put(
+      `${API_URL}/bookings/${selectedItem.value.id}`,
+      data
+    );
   } else {
     await axios.post(`${API_URL}/bookings`, data);
   }
@@ -282,26 +365,19 @@ const deleteItem = async (id) => {
   await axios.delete(`${API_URL}/bookings/${id}`);
   fetchBookings(currentPage.value);
 };
-const formatDate = (dt) => {
-  if (!dt) return '';
-  return new Date(dt).toLocaleDateString();
-};
-
-const formatTime = (dt) => {
-  if (!dt) return '';
-  return new Date(dt).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
 </script>
 
 <style scoped>
 .card {
   border-radius: 12px;
 }
+
 table th,
 table td {
   vertical-align: middle;
+}
+
+td small {
+  font-size: 12px;
 }
 </style>
