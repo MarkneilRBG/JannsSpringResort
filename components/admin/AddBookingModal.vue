@@ -15,7 +15,6 @@
         <!-- BODY -->
         <div class="modal-body pt-1">
 
-          <!-- Guest Info -->
           <h6 class="text-muted mb-2 fw-semibold small">Guest Information</h6>
 
           <div class="row g-2 mb-3">
@@ -30,7 +29,6 @@
             </div>
           </div>
 
-          <!-- Booking Details -->
           <h6 class="text-muted mb-2 fw-semibold small">Booking Details</h6>
 
           <div class="row g-2 mb-3">
@@ -143,27 +141,88 @@ const form = ref({
   videoke: false,
 });
 
-// EDIT MODE
+/* =========================
+   EDIT MODE
+========================= */
 watch(
   () => props.editData,
   (val) => {
     if (val) {
+      const start = new Date(val.start_datetime);
+
       form.value = {
         ...val,
-        date: new Date(val.date).toISOString().split("T")[0],
+        date: start.toISOString().split("T")[0],
+        time: detectTimeRange(val.start_datetime, val.end_datetime)
       };
     }
   },
   { immediate: true }
 );
 
-// Weekend
+/* =========================
+   TIME GENERATION
+========================= */
+const formatForBackend = (date) => {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+};
+
+const generateDateTime = () => {
+  const base = new Date(form.value.date);
+
+  let start, end;
+
+  if (form.value.time === "8:00 AM - 5:00 PM") {
+    start = new Date(base);
+    start.setHours(8, 0, 0);
+
+    end = new Date(base);
+    end.setHours(17, 0, 0);
+  }
+
+  else if (form.value.time === "7:00 PM - 7:00 AM") {
+    start = new Date(base);
+    start.setHours(19, 0, 0);
+
+    end = new Date(base);
+    end.setHours(7, 0, 0);
+    end.setDate(end.getDate() + 1); // 🔥 overnight
+  }
+
+  else if (form.value.time === "2:00 PM - 12:00 AM") {
+    start = new Date(base);
+    start.setHours(14, 0, 0);
+
+    end = new Date(base);
+    end.setHours(0, 0, 0);
+    end.setDate(end.getDate() + 1);
+  }
+
+  return {
+    start_datetime: formatForBackend(start),
+    end_datetime: formatForBackend(end)
+  };
+};
+
+const detectTimeRange = (start, end) => {
+  const s = new Date(start);
+  const e = new Date(end);
+
+  if (s.getHours() === 8 && e.getHours() === 17) return "8:00 AM - 5:00 PM";
+  if (s.getHours() === 19 && e.getHours() === 7) return "7:00 PM - 7:00 AM";
+  if (s.getHours() === 14 && e.getHours() === 0) return "2:00 PM - 12:00 AM";
+
+  return "8:00 AM - 5:00 PM";
+};
+
+/* =========================
+   PRICE
+========================= */
 const isWeekend = (date) => {
   const d = new Date(date);
   return d.getDay() === 0 || d.getDay() === 6;
 };
 
-// Holidays
 const holidays = [
   "2026-01-01",
   "2026-04-09",
@@ -173,7 +232,6 @@ const holidays = [
 
 const isHoliday = (date) => holidays.includes(date);
 
-// Price
 const totalAmount = computed(() => {
   let base = form.value.cabin === "Talisay Cabin" ? 4500 : 4000;
 
@@ -186,43 +244,39 @@ const totalAmount = computed(() => {
   return base;
 });
 
-// Modal
-let modalInstance = null;
-
-onMounted(() => {
-  if (import.meta.client) {
-    const modalEl = document.getElementById("addBookingModal");
-    if (modalEl && window.bootstrap) {
-      modalInstance = new window.bootstrap.Modal(modalEl);
-    }
-  }
-});
-
+/* =========================
+   MODAL
+========================= */
 const closeModal = () => {
   const modalEl = document.getElementById("addBookingModal");
 
   if (modalEl) {
-    // trigger fade out
     modalEl.classList.remove("show");
 
-    // wait for animation (Bootstrap default = 300ms)
     setTimeout(() => {
       modalEl.style.display = "none";
-
-      // remove backdrop AFTER animation
       document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
-
       document.body.classList.remove("modal-open");
       document.body.style = "";
     }, 300);
   }
 };
 
-// Submit
+/* =========================
+   SUBMIT
+========================= */
 const submit = () => {
+  const { start_datetime, end_datetime } = generateDateTime();
+
   emit("save", {
-    ...form.value,
+    name: form.value.name,
+    address: form.value.address,
+    cabin: form.value.cabin,
+    guests: form.value.guests,
+    videoke: form.value.videoke,
     amount: totalAmount.value,
+    start_datetime,
+    end_datetime
   });
 
   form.value = {
@@ -275,17 +329,5 @@ const submit = () => {
 .form-select:focus {
   border-color: #ff6b2c;
   box-shadow: 0 0 0 0.1rem rgba(255, 107, 44, 0.2);
-}
-
-input[type="date"] {
-  height: 32px !important;
-  padding: 4px 8px !important;
-  font-size: 13px;
-}
-
-input[type="number"] {
-  height: 32px !important;
-  padding: 4px 8px !important;
-  font-size: 13px;
 }
 </style>

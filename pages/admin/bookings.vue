@@ -2,25 +2,83 @@
   <div>
     <h4 class="fw-bold mb-3">Bookings</h4>
 
-  
-      <div class="">
-        <AdminBookingCalendar />
-      </div>
+    <!-- 📅 CALENDAR -->
+    <div>
+      <AdminBookingCalendar
+        :bookings="bookings"
+        @dateSelected="handleDateFilter"
+      />
+    </div>
 
-
+    <!-- 📋 TABLE -->
     <div class="mt-4">
-      <AdminBookingTable />
+      <AdminBookingTable
+        :bookings="bookings"
+        :loading="loading"
+        :currentPage="currentPage"
+        :lastPage="lastPage"
+        @changePage="fetchBookings"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
-definePageMeta({
-  layout: "admin"
-});
+import { ref, onMounted } from "vue";
+
 import AdminBookingCalendar from '~/components/admin/BookingCalendar.vue'
 import AdminBookingTable from '~/components/admin/BookingTable.vue'
 
+definePageMeta({
+  layout: "admin"
+});
 
+// 🔥 USE GLOBAL API
+const { $api } = useNuxtApp();
 
+// STATE
+const bookings = ref([]);
+const loading = ref(false);
+const currentPage = ref(1);
+const lastPage = ref(1);
+
+// FILTERS
+const selectedDate = ref(null);
+
+// FETCH BOOKINGS
+const fetchBookings = async (page = 1) => {
+  loading.value = true;
+
+  try {
+    const res = await $api('/bookings', {
+      params: {
+        page,
+        date: selectedDate.value,
+      },
+    });
+
+    console.log("API RESPONSE:", res); // 🔥 ADD THIS
+
+    bookings.value = res.data; // ✅ correct for Laravel
+    currentPage.value = res.current_page;
+    lastPage.value = res.last_page;
+
+  } catch (error) {
+    console.error(error);
+  } finally {
+    loading.value = false;
+  }
+};
+console.log("BOOKINGS:", bookings.value);
+
+// INITIAL LOAD
+onMounted(() => {
+  fetchBookings();
+});
+
+// 📅 CALENDAR CLICK
+const handleDateFilter = (date) => {
+  selectedDate.value = new Date(date).toISOString().split("T")[0];
+  fetchBookings(1);
+};
 </script>

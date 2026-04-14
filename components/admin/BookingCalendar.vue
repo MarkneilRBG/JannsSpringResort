@@ -10,65 +10,72 @@
 
     <FullCalendar :options="calendarOptions" />
 
-<!-- MODAL -->
-<div v-if="showModal" class="custom-modal-wrapper">
-  <div class="custom-modal">
+    <!-- MODAL -->
+    <div v-if="showModal" class="custom-modal-wrapper">
+      <div class="custom-modal">
 
-    <!-- HEADER -->
-    <div class="modal-header-custom">
-      <h5>Edit Booking</h5>
-      <button class="btn-close" @click="showModal = false"></button>
-    </div>
+        <!-- HEADER -->
+        <div class="modal-header-custom">
+          <h5>Edit Booking</h5>
+          <button class="btn-close" @click="showModal = false"></button>
+        </div>
 
-    <!-- BODY -->
-    <div class="modal-body-custom">
+        <!-- BODY -->
+        <div class="modal-body-custom">
 
-      <div class="form-group">
-        <label>Full Name</label>
-        <input v-model="selectedEvent.fullName" class="form-control custom-input" />
+          <div class="form-group">
+            <label>Full Name</label>
+            <input v-model="selectedEvent.fullName" class="form-control custom-input" />
+          </div>
+
+          <div class="form-group">
+            <label>Time</label>
+            <select v-model="selectedEvent.shift" class="form-control custom-input">
+              <option>AM</option>
+              <option>PM</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <select v-model="selectedEvent.status" class="form-control custom-input">
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="modal-footer-custom">
+          <button class="btn btn-light" @click="showModal = false">Cancel</button>
+          <button class="btn btn-primary px-4" @click="saveBooking">Save</button>
+        </div>
+
       </div>
 
-      <div class="form-group">
-        <label>Shift</label>
-        <select v-model="selectedEvent.shift" class="form-control custom-input">
-          <option>AM</option>
-          <option>PM</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Status</label>
-        <select v-model="selectedEvent.status" class="form-control custom-input">
-          <option value="booked">Booked</option>
-          <option value="pending">Pending</option>
-          <option value="available">Available</option>
-        </select>
-      </div>
-
+      <div class="custom-backdrop" @click="showModal = false"></div>
     </div>
 
-    <!-- FOOTER -->
-    <div class="modal-footer-custom">
-      <button class="btn btn-light" @click="showModal = false">Cancel</button>
-      <button class="btn btn-primary px-4" @click="saveBooking">Save</button>
-    </div>
-
-  </div>
-
-  <!-- BACKDROP -->
-  <div class="custom-backdrop" @click="showModal = false"></div>
-</div>
-
-    <!-- BACKDROP -->
     <div v-if="showModal" class="modal-backdrop fade show"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
+
+/* =========================
+   PROPS (FROM BACKEND)
+========================= */
+const props = defineProps({
+  bookings: {
+    type: Array,
+    default: () => []
+  }
+})
 
 /* =========================
    STATE
@@ -78,69 +85,59 @@ const showModal = ref(false)
 const selectedCabin = ref('Malobago')
 
 /* =========================
-   DATA
+   DEBUG (REMOVE LATER)
 ========================= */
-const bookings = ref([
-  {
-    date: '2026-04-03',
-    shift: 'PM',
-    status: 'booked',
-    firstName: 'John',
-    lastName: 'Doe',
-    cabin: 'Malobago'
-  },
-  {
-    date: '2026-04-04',
-    shift: 'AM',
-    status: 'booked',
-    firstName: 'John',
-    lastName: 'Doe',
-    cabin: 'Malobago'
-  },
-  {
-    date: '2026-04-03',
-    shift: 'AM',
-    status: 'pending',
-    firstName: 'Mark',
-    lastName: 'Neil',
-    cabin: 'Talisay'
-  }
-])
+watch(() => props.bookings, (val) => {
+  console.log("🔥 CALENDAR RECEIVED:", val)
+})
 
 /* =========================
    HELPERS
 ========================= */
-const getColor = (status) => {
-  if (status === 'booked') return '#dc3545'
-  if (status === 'pending') return '#f59e0b'
-  return '#10b981'
+const getColor = (b) => {
+  if (b.paid >= b.amount) return '#10b981' // green
+  if (b.paid > 0) return '#f59e0b' // yellow
+  return '#dc3545' // red
+}
+
+const formatTime = (time) => {
+  if (!time) return ''
+  if (time.includes('AM') || time.includes('PM')) return time
+
+  return new Date(`1970-01-01T${time}`).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 /* =========================
-   EVENTS (REACTIVE 🔥)
+   EVENTS (FROM BACKEND)
 ========================= */
 const events = computed(() => {
-  return bookings.value
-    .filter(b => b.cabin === selectedCabin.value)
+  return (props.bookings || [])
+    .filter(b =>
+      (b.cabin || '')
+        .toLowerCase()
+        .includes(selectedCabin.value.toLowerCase())
+    )
     .sort((a, b) => {
       if (a.date === b.date) {
-        return a.shift === 'AM' ? -1 : 1
+        return a.time === 'AM' ? -1 : 1
       }
       return new Date(a.date) - new Date(b.date)
     })
     .map(b => {
-      const initial = b.firstName?.charAt(0).toUpperCase() || ''
-      const lastName = b.lastName || ''
+      const initial = b.name?.charAt(0).toUpperCase() || ''
 
       return {
-        id: `${b.date}-${b.shift}-${b.cabin}`, // 🔥 unique ID
-        title: `${b.shift} - ${initial}. ${lastName}`,
+        id: b.id,
+        title: `${formatTime(b.time)} - ${initial}. ${b.name}`,
         date: b.date,
-        color: getColor(b.status),
+        color: getColor(b),
         extendedProps: {
-          fullName: `${b.firstName} ${b.lastName}`,
-          shift: b.shift,
-          status: b.status,
+          fullName: b.name,
+          shift: b.time,
+          status: b.paid >= b.amount ? 'paid' : 'unpaid',
           cabin: b.cabin
         }
       }
@@ -172,25 +169,10 @@ const calendarOptions = computed(() => ({
 }))
 
 /* =========================
-   SAVE BOOKING
+   SAVE (UI ONLY)
 ========================= */
 const saveBooking = () => {
-  const [firstName, lastName] = selectedEvent.value.fullName.split(' ')
-
-  const index = bookings.value.findIndex(b =>
-    `${b.date}-${b.shift}-${b.cabin}` === selectedEvent.value.id
-  )
-
-  if (index !== -1) {
-    bookings.value[index] = {
-      ...bookings.value[index],
-      firstName,
-      lastName,
-      status: selectedEvent.value.status,
-      shift: selectedEvent.value.shift
-    }
-  }
-
+  console.log("Edited:", selectedEvent.value)
   showModal.value = false
 }
 </script>
@@ -200,7 +182,6 @@ const saveBooking = () => {
   font-size: 14px;
 }
 
-/* MODAL WRAPPER */
 .custom-modal-wrapper {
   position: fixed;
   inset: 0;
@@ -210,7 +191,6 @@ const saveBooking = () => {
   justify-content: center;
 }
 
-/* BACKDROP */
 .custom-backdrop {
   position: absolute;
   inset: 0;
@@ -218,7 +198,6 @@ const saveBooking = () => {
   backdrop-filter: blur(3px);
 }
 
-/* MODAL BOX */
 .custom-modal {
   position: relative;
   background: white;
@@ -229,7 +208,6 @@ const saveBooking = () => {
   animation: fadeIn 0.2s ease;
 }
 
-/* HEADER */
 .modal-header-custom {
   display: flex;
   justify-content: space-between;
@@ -238,12 +216,10 @@ const saveBooking = () => {
   border-bottom: 1px solid #eee;
 }
 
-/* BODY */
 .modal-body-custom {
   padding: 20px;
 }
 
-/* FOOTER */
 .modal-footer-custom {
   display: flex;
   justify-content: flex-end;
@@ -252,7 +228,6 @@ const saveBooking = () => {
   border-top: 1px solid #eee;
 }
 
-/* FORM */
 .form-group {
   margin-bottom: 15px;
 }
@@ -264,7 +239,6 @@ const saveBooking = () => {
   display: block;
 }
 
-/* INPUT STYLE */
 .custom-input {
   border-radius: 10px;
   padding: 10px;
@@ -276,7 +250,6 @@ const saveBooking = () => {
   box-shadow: none;
 }
 
-/* ANIMATION */
 @keyframes fadeIn {
   from {
     transform: translateY(10px);

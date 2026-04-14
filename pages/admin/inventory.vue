@@ -72,8 +72,8 @@
               <td>{{ item.name }}</td>
               <td>{{ item.address }}</td>
               <td><span class="badge bg-info text-dark">{{ item.cabin }}</span></td>
-              <td>{{ item.date }}</td>
-              <td><span class="badge bg-warning text-dark">{{ item.time }}</span></td>
+              <td>{{ formatDate(item.start_datetime) }}</td>
+              <td><span class="badge bg-warning text-dark">{{ formatTime(item.start_datetime) }} - {{ formatTime(item.end_datetime) }}</span></td>
               <td>{{ item.guests }}</td>
 
               <td>
@@ -257,7 +257,16 @@ const handlePaymentConfirm = async (amount) => {
 };
 
 const handleSave = async (data) => {
-  data.date = new Date(data.date).toISOString().split("T")[0];
+  // Convert to proper datetime format
+  data.start_datetime = new Date(data.start_datetime)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ');
+
+  data.end_datetime = new Date(data.end_datetime)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ');
 
   if (selectedItem.value) {
     await axios.put(`${API_URL}/bookings/${selectedItem.value.id}`, data);
@@ -272,6 +281,18 @@ const deleteItem = async (id) => {
   if (!confirm("Delete this booking?")) return;
   await axios.delete(`${API_URL}/bookings/${id}`);
   fetchBookings(currentPage.value);
+};
+const formatDate = (dt) => {
+  if (!dt) return '';
+  return new Date(dt).toLocaleDateString();
+};
+
+const formatTime = (dt) => {
+  if (!dt) return '';
+  return new Date(dt).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 </script>
 
