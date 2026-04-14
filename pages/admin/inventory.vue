@@ -2,26 +2,44 @@
   <div>
     <h4 class="mb-3 fw-bold">Inventory</h4>
 
-    <!-- Filters -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <input
-        v-model="search"
-        type="text"
-        class="form-control w-25"
-        placeholder="Search name..."
-      />
+    <!-- FILTERS -->
+   <div class="d-flex align-items-center gap-2 mb-3">
+    <!-- SEARCH -->
+    <input
+      v-model="search"
+      type="text"
+      class="form-control"
+      style="width: 250px; height: 42px;"
+      placeholder="Search name, address..."
+      @input="handleSearch"
+    />
 
-      <button
-        class="btn btn-primary"
-        data-bs-toggle="modal"
-        data-bs-target="#addBookingModal"
-        @click="openAdd"
-      >
-        + Add Booking
-      </button>
-    </div>
+    <!-- STATUS FILTER -->
+    <select
+      v-model="status"
+      class="form-select"
+      style="width: 180px; height: 42px;"
+      @change="fetchBookings(1)"
+    >
+      <option value="">All</option>
+      <option value="paid">Fully Paid</option>
+      <option value="unpaid">Unpaid</option>
+    </select>
 
-    <!-- Table -->
+    <!-- ADD BUTTON -->
+    <button
+      class="btn btn-primary ms-auto"
+      style="height: 42px;"
+      data-bs-toggle="modal"
+      data-bs-target="#addBookingModal"
+      @click="openAdd"
+    >
+      + Add Booking
+    </button>
+
+  </div>
+
+    <!-- TABLE -->
     <div class="card shadow-sm border-0">
       <div class="card-body p-0">
         <table class="table table-hover mb-0">
@@ -42,73 +60,47 @@
           </thead>
 
           <tbody>
-            <!-- 🔄 LOADING -->
+            <!-- LOADING -->
             <tr v-if="loading">
               <td colspan="11" class="text-center py-4">
                 <div class="spinner-border text-primary"></div>
-                <div class="mt-2 text-muted">Loading bookings...</div>
               </td>
             </tr>
 
-            <!-- ✅ DATA -->
-            <tr
-              v-else-if="filteredInventory.length > 0"
-              v-for="item in filteredInventory"
-              :key="item.id"
-            >
+            <!-- DATA -->
+            <tr v-else-if="inventory.length > 0" v-for="item in inventory" :key="item.id">
               <td>{{ item.name }}</td>
               <td>{{ item.address }}</td>
-
-              <td>
-                <span class="badge bg-info text-dark">
-                  {{ item.cabin }}
-                </span>
-              </td>
-
+              <td><span class="badge bg-info text-dark">{{ item.cabin }}</span></td>
               <td>{{ item.date }}</td>
-
-              <td>
-                <span class="badge bg-warning text-dark">
-                  {{ item.time }}
-                </span>
-              </td>
-
+              <td><span class="badge bg-warning text-dark">{{ item.time }}</span></td>
               <td>{{ item.guests }}</td>
 
               <td>
-                <span
-                  class="badge"
-                  :class="item.videoke ? 'bg-success' : 'bg-secondary'"
-                >
+                <span class="badge" :class="item.videoke ? 'bg-success' : 'bg-secondary'">
                   {{ item.videoke ? "Yes" : "No" }}
                 </span>
               </td>
 
-              <!-- Amount -->
               <td class="fw-bold text-success">
                 ₱{{ formatMoney(item.amount) }}
               </td>
 
-              <!-- Payment -->
               <td>
                 <span class="badge" :class="getPaymentStatusClass(item)">
                   {{ getPaymentStatus(item) }}
                 </span>
               </td>
 
-              <!-- Balance -->
               <td>
                 <span
-                  class="fw-bold"
                   :class="getBalance(item) === 0 ? 'text-success' : 'text-danger'"
                 >
                   ₱{{ formatMoney(getBalance(item)) }}
                 </span>
               </td>
 
-              <!-- Actions -->
               <td class="text-center">
-                <!-- Edit -->
                 <button
                   class="btn btn-sm btn-outline-primary me-2"
                   @click="editItem(item)"
@@ -118,224 +110,168 @@
                   <Icon name="mdi:pencil" size="18" />
                 </button>
 
-                <!-- Delete -->
                 <button
                   class="btn btn-sm btn-outline-danger me-2"
                   @click="deleteItem(item.id)"
-                  :disabled="deleting === item.id"
                 >
-                  <span
-                    v-if="deleting === item.id"
-                    class="spinner-border spinner-border-sm"
-                  ></span>
-                  <Icon v-else name="mdi:delete" size="18" />
+                  <Icon name="mdi:delete" size="18" />
                 </button>
 
-                <!-- Payment -->
                 <button
                   class="btn btn-sm btn-warning"
                   @click="addPayment(item)"
-                  :disabled="paying"
                 >
-                  <span
-                    v-if="paying"
-                    class="spinner-border spinner-border-sm"
-                  ></span>
-                  <Icon v-else name="mdi:cash-plus" size="18" />
+                  <Icon name="mdi:cash-plus" size="18" />
                 </button>
               </td>
             </tr>
 
             <!-- EMPTY -->
             <tr v-else>
-              <td colspan="11" class="text-center py-3">
-                No records found.
-              </td>
+              <td colspan="11" class="text-center py-3">No records found.</td>
             </tr>
           </tbody>
         </table>
+
+        <!-- PAGINATION -->
+        <div class="d-flex justify-content-between align-items-center p-3">
+          <div class="text-muted small">
+            Page {{ currentPage }} of {{ lastPage }}
+          </div>
+
+          <div class="btn-group">
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              :disabled="currentPage === 1"
+              @click="fetchBookings(currentPage - 1)"
+            >
+              Prev
+            </button>
+
+            <button
+              v-for="page in lastPage"
+              :key="page"
+              class="btn btn-sm"
+              :class="page === currentPage ? 'btn-primary' : 'btn-outline-secondary'"
+              @click="fetchBookings(page)"
+            >
+              {{ page }}
+            </button>
+
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              :disabled="currentPage === lastPage"
+              @click="fetchBookings(currentPage + 1)"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Modals -->
     <AddBookingModal :editData="selectedItem" @save="handleSave" />
     <PaymentModal :item="selectedPaymentItem" @confirm="handlePaymentConfirm" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
 import AddBookingModal from "@/components/admin/AddBookingModal.vue";
 import PaymentModal from "@/components/admin/PaymentModal.vue";
 
-definePageMeta({
-  layout: "admin",
-});
+definePageMeta({ layout: "admin" });
 
 const { $bootstrap } = useNuxtApp();
 
 const API_URL = "http://127.0.0.1:8000/api";
 
-const search = ref("");
 const inventory = ref([]);
-const selectedItem = ref(null);
-const selectedPaymentItem = ref(null);
-
-// 🔥 loading states
+const currentPage = ref(1);
+const lastPage = ref(1);
 const loading = ref(false);
-const saving = ref(false);
-const deleting = ref(null);
-const paying = ref(false);
 
-// =============================
-// FETCH
-// =============================
-const fetchBookings = async () => {
+const search = ref("");
+const status = ref("");
+
+let debounceTimeout = null;
+
+// FETCH WITH FILTERS
+const fetchBookings = async (page = 1) => {
   loading.value = true;
+
   try {
-    const res = await axios.get(`${API_URL}/bookings`);
+    const res = await axios.get(`${API_URL}/bookings`, {
+      params: {
+        page,
+        search: search.value,
+        status: status.value,
+      },
+    });
+
     inventory.value = res.data.data;
-  } catch (err) {
-    console.error(err);
+    currentPage.value = res.data.current_page;
+    lastPage.value = res.data.last_page;
+
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(fetchBookings);
+onMounted(() => fetchBookings());
 
-// =============================
-// FILTER
-// =============================
-const filteredInventory = computed(() => {
-  return inventory.value.filter((item) =>
-    item.name.toLowerCase().includes(search.value.toLowerCase())
-  );
-});
+// 🔍 SEARCH (DEBOUNCED)
+const handleSearch = () => {
+  clearTimeout(debounceTimeout);
+  debounceTimeout = setTimeout(() => {
+    fetchBookings(1);
+  }, 400);
+};
 
-// =============================
 // HELPERS
-// =============================
-const formatMoney = (value) => {
-  return Number(value).toLocaleString();
+const formatMoney = (v) => Number(v).toLocaleString();
+const getBalance = (i) => i.amount - i.paid;
+
+const getPaymentStatus = (i) =>
+  i.paid >= i.amount ? "Fully Paid" : "Partially Paid";
+
+const getPaymentStatusClass = (i) =>
+  i.paid >= i.amount ? "bg-success" : "bg-warning text-dark";
+
+// ACTIONS
+const selectedItem = ref(null);
+const selectedPaymentItem = ref(null);
+
+const openAdd = () => (selectedItem.value = null);
+const editItem = (i) => (selectedItem.value = { ...i });
+
+const addPayment = (i) => {
+  selectedPaymentItem.value = i;
+  new $bootstrap.Modal(document.getElementById("paymentModal")).show();
 };
 
-const getPaymentStatus = (item) => {
-  return item.paid >= item.amount ? "Fully Paid" : "Partially Paid";
-};
-
-const getPaymentStatusClass = (item) => {
-  return item.paid >= item.amount
-    ? "bg-success"
-    : "bg-warning text-dark";
-};
-
-const getBalance = (item) => item.amount - item.paid;
-
-// =============================
-// MODALS
-// =============================
-const openAdd = () => {
-  selectedItem.value = null;
-};
-
-const editItem = (item) => {
-  selectedItem.value = { ...item };
-};
-
-const addPayment = (item) => {
-  selectedPaymentItem.value = item;
-
-  const modal = new $bootstrap.Modal(
-    document.getElementById("paymentModal")
-  );
-  modal.show();
-};
-
-// =============================
-// PAYMENT
-// =============================
 const handlePaymentConfirm = async (amount) => {
-  paying.value = true;
-
-  try {
-    const res = await axios.post(
-      `${API_URL}/bookings/${selectedPaymentItem.value.id}/payment`,
-      { amount }
-    );
-
-    selectedPaymentItem.value.paid = res.data.data.paid;
-
-    const modal = $bootstrap.Modal.getInstance(
-      document.getElementById("paymentModal")
-    );
-    modal.hide();
-
-  } catch (err) {
-    alert(err.response?.data?.message || "Payment failed");
-  } finally {
-    paying.value = false;
-  }
+  await axios.post(`${API_URL}/bookings/${selectedPaymentItem.value.id}/payment`, { amount });
+  fetchBookings(currentPage.value);
 };
 
-// =============================
-// CREATE / UPDATE
-// =============================
 const handleSave = async (data) => {
-  saving.value = true;
+  data.date = new Date(data.date).toISOString().split("T")[0];
 
-  try {
-    let res;
-
-    data.date = new Date(data.date).toISOString().split("T")[0];
-
-    if (selectedItem.value) {
-      res = await axios.put(
-        `${API_URL}/bookings/${selectedItem.value.id}`,
-        data
-      );
-
-      const index = inventory.value.findIndex(
-        (i) => i.id === selectedItem.value.id
-      );
-
-      if (index !== -1) {
-        inventory.value[index] = res.data.data;
-      }
-
-    } else {
-      res = await axios.post(`${API_URL}/bookings`, data);
-      inventory.value.unshift(res.data.data);
-    }
-
-  } catch (err) {
-    alert(err.response?.data?.message || "Save failed");
-  } finally {
-    saving.value = false;
+  if (selectedItem.value) {
+    await axios.put(`${API_URL}/bookings/${selectedItem.value.id}`, data);
+  } else {
+    await axios.post(`${API_URL}/bookings`, data);
   }
+
+  fetchBookings(currentPage.value);
 };
 
-// =============================
-// DELETE
-// =============================
 const deleteItem = async (id) => {
   if (!confirm("Delete this booking?")) return;
-
-  deleting.value = id;
-
-  try {
-    await axios.delete(`${API_URL}/bookings/${id}`);
-
-    inventory.value = inventory.value.filter(
-      (item) => item.id !== id
-    );
-
-  } catch (err) {
-    alert("Delete failed");
-  } finally {
-    deleting.value = null;
-  }
+  await axios.delete(`${API_URL}/bookings/${id}`);
+  fetchBookings(currentPage.value);
 };
 </script>
 
