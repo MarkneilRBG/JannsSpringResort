@@ -23,6 +23,7 @@
     "@nuxt/image": "^1.9.0",
     "@samk-dev/nuxt-vcalendar": "^1.0.4",
     "@vuepic/vue-datepicker": "^12.1.0",
+    "axios": "^1.15.0",
     "bootstrap": "^5.3.3",
     "chart.js": "^4.5.1",
     "dayjs-nuxt": "^2.1.11",

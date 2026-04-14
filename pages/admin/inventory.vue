@@ -1,5 +1,5 @@
 <template>
-  <div class="">
+  <div>
     <h4 class="mb-3 fw-bold">Inventory</h4>
 
     <!-- Filters -->
@@ -42,7 +42,20 @@
           </thead>
 
           <tbody>
-            <tr v-for="item in filteredInventory" :key="item.id">
+            <!-- 🔄 LOADING -->
+            <tr v-if="loading">
+              <td colspan="11" class="text-center py-4">
+                <div class="spinner-border text-primary"></div>
+                <div class="mt-2 text-muted">Loading bookings...</div>
+              </td>
+            </tr>
+
+            <!-- ✅ DATA -->
+            <tr
+              v-else-if="filteredInventory.length > 0"
+              v-for="item in filteredInventory"
+              :key="item.id"
+            >
               <td>{{ item.name }}</td>
               <td>{{ item.address }}</td>
 
@@ -67,76 +80,74 @@
                   class="badge"
                   :class="item.videoke ? 'bg-success' : 'bg-secondary'"
                 >
-                  {{ item.videoke ? 'Yes' : 'No' }}
+                  {{ item.videoke ? "Yes" : "No" }}
                 </span>
               </td>
 
-              
-              <!-- PAYMENT STATUS -->
+              <!-- Amount -->
+              <td class="fw-bold text-success">
+                ₱{{ formatMoney(item.amount) }}
+              </td>
+
+              <!-- Payment -->
               <td>
-                <span
-                class="badge"
-                  :class="getPaymentStatusClass(item)"
-                  >
+                <span class="badge" :class="getPaymentStatusClass(item)">
                   {{ getPaymentStatus(item) }}
                 </span>
               </td>
-              
-              <!-- BALANCE -->
+
+              <!-- Balance -->
               <td>
                 <span
-                class="fw-bold"
-                :class="getBalance(item) === 0 ? 'text-success' : 'text-danger'"
+                  class="fw-bold"
+                  :class="getBalance(item) === 0 ? 'text-success' : 'text-danger'"
                 >
-                ₱{{ getBalance(item).toLocaleString() }}
-              </span>
-            </td>
-            
-            <td class="fw-bold text-success">
-              ₱{{ item.amount.toLocaleString() }}
-            </td>
-              <!-- ACTIONS -->
+                  ₱{{ formatMoney(getBalance(item)) }}
+                </span>
+              </td>
+
+              <!-- Actions -->
               <td class="text-center">
                 <!-- Edit -->
-               <button
+                <button
                   class="btn btn-sm btn-outline-primary me-2"
                   @click="editItem(item)"
                   data-bs-toggle="modal"
                   data-bs-target="#addBookingModal"
                 >
-                  <span
-                    data-bs-toggle="tooltip"
-                    title="Edit Booking"
-                  >
-                    <Icon name="mdi:pencil" />
-                  </span>
+                  <Icon name="mdi:pencil" size="18" />
                 </button>
 
                 <!-- Delete -->
                 <button
                   class="btn btn-sm btn-outline-danger me-2"
                   @click="deleteItem(item.id)"
-                  data-bs-toggle="tooltip"
-                  title="Delete Booking"
+                  :disabled="deleting === item.id"
                 >
-                  <Icon name="mdi:delete" />
+                  <span
+                    v-if="deleting === item.id"
+                    class="spinner-border spinner-border-sm"
+                  ></span>
+                  <Icon v-else name="mdi:delete" size="18" />
                 </button>
 
-
-                <!-- Add Payment -->
+                <!-- Payment -->
                 <button
                   class="btn btn-sm btn-warning"
                   @click="addPayment(item)"
-                  data-bs-toggle="tooltip"
-                  title="Add Payment"
-
+                  :disabled="paying"
                 >
-                  <Icon name="mdi:cash-plus" />
+                  <span
+                    v-if="paying"
+                    class="spinner-border spinner-border-sm"
+                  ></span>
+                  <Icon v-else name="mdi:cash-plus" size="18" />
                 </button>
               </td>
             </tr>
 
-            <tr v-if="filteredInventory.length === 0">
+            <!-- EMPTY -->
+            <tr v-else>
               <td colspan="11" class="text-center py-3">
                 No records found.
               </td>
@@ -146,110 +157,85 @@
       </div>
     </div>
 
-    <!-- Modal -->
-    <AddBookingModal
-      :editData="selectedItem"
-      @save="handleSave"
-    />
-    <PaymentModal
-      :item="selectedPaymentItem"
-      @confirm="handlePaymentConfirm"
-    />
+    <!-- Modals -->
+    <AddBookingModal :editData="selectedItem" @save="handleSave" />
+    <PaymentModal :item="selectedPaymentItem" @confirm="handlePaymentConfirm" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import axios from "axios";
 import AddBookingModal from "@/components/admin/AddBookingModal.vue";
 import PaymentModal from "@/components/admin/PaymentModal.vue";
+
 definePageMeta({
   layout: "admin",
 });
 
-const search = ref("");
-const selectedItem = ref(null);
-const selectedPaymentItem = ref(null);
 const { $bootstrap } = useNuxtApp();
 
-// DATA
-const inventory = ref([
-  {
-    id: 1,
-    name: "Juan Dela Cruz",
-    address: "Cebu City",
-    cabin: "Talisay Cabin",
-    date: "Apr 3, 2026",
-    time: "8:00 AM - 5:00 PM",
-    guests: 5,
-    videoke: true,
-    amount: 3000,
-    paid: 1000,
-  },
-  {
-    id: 2,
-    name: "Maria Santos",
-    address: "Naga City",
-    cabin: "Malobago Cabin",
-    date: "Apr 5, 2026",
-    time: "8:00 AM - 5:00 PM",
-    guests: 8,
-    videoke: false,
-    amount: 4000,
-    paid: 4000,
-  },
-]);
+const API_URL = "http://127.0.0.1:8000/api";
 
+const search = ref("");
+const inventory = ref([]);
+const selectedItem = ref(null);
+const selectedPaymentItem = ref(null);
+
+// 🔥 loading states
+const loading = ref(false);
+const saving = ref(false);
+const deleting = ref(null);
+const paying = ref(false);
+
+// =============================
+// FETCH
+// =============================
+const fetchBookings = async () => {
+  loading.value = true;
+  try {
+    const res = await axios.get(`${API_URL}/bookings`);
+    inventory.value = res.data.data;
+  } catch (err) {
+    console.error(err);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(fetchBookings);
+
+// =============================
 // FILTER
+// =============================
 const filteredInventory = computed(() => {
   return inventory.value.filter((item) =>
     item.name.toLowerCase().includes(search.value.toLowerCase())
   );
 });
 
-// PAYMENT STATUS
+// =============================
+// HELPERS
+// =============================
+const formatMoney = (value) => {
+  return Number(value).toLocaleString();
+};
+
 const getPaymentStatus = (item) => {
-  if (item.paid >= item.amount) return "Fully Paid";
-  return "Partially Paid";
+  return item.paid >= item.amount ? "Fully Paid" : "Partially Paid";
 };
 
 const getPaymentStatusClass = (item) => {
-  if (item.paid >= item.amount) return "bg-success";
-  return "bg-warning text-dark";
+  return item.paid >= item.amount
+    ? "bg-success"
+    : "bg-warning text-dark";
 };
 
-// BALANCE
-const getBalance = (item) => {
-  return item.amount - item.paid;
-};
+const getBalance = (item) => item.amount - item.paid;
 
-
-
-
-const addPayment = (item) => {
-  selectedPaymentItem.value = item;
-
-  const modal = new $bootstrap.Modal(
-    document.getElementById("paymentModal")
-  );
-
-  modal.show();
-};
-
-const handlePaymentConfirm = (amount) => {
-  selectedPaymentItem.value.paid += amount;
-
-  if (selectedPaymentItem.value.paid > selectedPaymentItem.value.amount) {
-    selectedPaymentItem.value.paid =
-      selectedPaymentItem.value.amount;
-  }
-
-  // close modal
-  const modalEl = document.getElementById("paymentModal");
-  const modal = bootstrap.Modal.getInstance(modalEl);
-  modal.hide();
-};
-
-// ADD / EDIT / DELETE
+// =============================
+// MODALS
+// =============================
 const openAdd = () => {
   selectedItem.value = null;
 };
@@ -258,41 +244,98 @@ const editItem = (item) => {
   selectedItem.value = { ...item };
 };
 
-const deleteItem = (id) => {
-  if (confirm("Are you sure you want to delete this booking?")) {
-    inventory.value = inventory.value.filter((item) => item.id !== id);
+const addPayment = (item) => {
+  selectedPaymentItem.value = item;
+
+  const modal = new $bootstrap.Modal(
+    document.getElementById("paymentModal")
+  );
+  modal.show();
+};
+
+// =============================
+// PAYMENT
+// =============================
+const handlePaymentConfirm = async (amount) => {
+  paying.value = true;
+
+  try {
+    const res = await axios.post(
+      `${API_URL}/bookings/${selectedPaymentItem.value.id}/payment`,
+      { amount }
+    );
+
+    selectedPaymentItem.value.paid = res.data.data.paid;
+
+    const modal = $bootstrap.Modal.getInstance(
+      document.getElementById("paymentModal")
+    );
+    modal.hide();
+
+  } catch (err) {
+    alert(err.response?.data?.message || "Payment failed");
+  } finally {
+    paying.value = false;
   }
 };
 
-const handleSave = (data) => {
-  const formattedDate = new Date(data.date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+// =============================
+// CREATE / UPDATE
+// =============================
+const handleSave = async (data) => {
+  saving.value = true;
 
-  if (selectedItem.value) {
-    const index = inventory.value.findIndex(
-      (i) => i.id === selectedItem.value.id
+  try {
+    let res;
+
+    data.date = new Date(data.date).toISOString().split("T")[0];
+
+    if (selectedItem.value) {
+      res = await axios.put(
+        `${API_URL}/bookings/${selectedItem.value.id}`,
+        data
+      );
+
+      const index = inventory.value.findIndex(
+        (i) => i.id === selectedItem.value.id
+      );
+
+      if (index !== -1) {
+        inventory.value[index] = res.data.data;
+      }
+
+    } else {
+      res = await axios.post(`${API_URL}/bookings`, data);
+      inventory.value.unshift(res.data.data);
+    }
+
+  } catch (err) {
+    alert(err.response?.data?.message || "Save failed");
+  } finally {
+    saving.value = false;
+  }
+};
+
+// =============================
+// DELETE
+// =============================
+const deleteItem = async (id) => {
+  if (!confirm("Delete this booking?")) return;
+
+  deleting.value = id;
+
+  try {
+    await axios.delete(`${API_URL}/bookings/${id}`);
+
+    inventory.value = inventory.value.filter(
+      (item) => item.id !== id
     );
 
-    if (index !== -1) {
-      inventory.value[index] = {
-        ...inventory.value[index],
-        ...data,
-        date: formattedDate,
-      };
-    }
-  } else {
-    inventory.value.push({
-      id: Date.now(),
-      ...data,
-      date: formattedDate,
-      paid: data.paid || 0, // default 0 if not provided
-    });
+  } catch (err) {
+    alert("Delete failed");
+  } finally {
+    deleting.value = null;
   }
-
-  selectedItem.value = null;
 };
 </script>
 
@@ -300,7 +343,6 @@ const handleSave = (data) => {
 .card {
   border-radius: 12px;
 }
-
 table th,
 table td {
   vertical-align: middle;
