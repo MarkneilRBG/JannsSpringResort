@@ -1,3 +1,4 @@
+```vue
 <template>
   <div class="card p-3">
     
@@ -18,7 +19,7 @@
           <option value="year">Monthly</option>
         </select>
 
-        <!-- MONTH (for DAILY) -->
+        <!-- MONTH -->
         <select v-if="filter === 'week'" v-model="selectedMonth" class="form-select w-auto">
           <option v-for="(m, i) in months" :key="i" :value="i">
             {{ m }}
@@ -28,8 +29,8 @@
         <!-- CABIN -->
         <select v-model="selectedCabin" class="form-select w-auto">
           <option value="all">All Cabins</option>
-          <option value="Malobago">Malobago</option>
-          <option value="Talisay">Talisay</option>
+          <option value="talisay">Talisay</option>
+          <option value="malobago">Malobago</option>
         </select>
 
       </div>
@@ -44,11 +45,39 @@
     <!-- CHART -->
     <Bar :data="chartData" :options="chartOptions" />
 
+    <!-- DEBUG TABLE -->
+    <div class="mt-4 p-3 border rounded bg-light">
+      <h6>🔍 Debug Bookings ({{ filteredBookings.length }})</h6>
+
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Paid</th>
+            <th>Status</th>
+            <th>Cabin</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="b in filteredBookings" :key="b.id">
+            <td>{{ b.id }}</td>
+            <td>{{ b.start_datetime }}</td>
+            <td>{{ b.end_datetime }}</td>
+            <td>₱{{ b.paid }}</td>
+            <td>{{ b.status }}</td>
+            <td>{{ b.cabin }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Bar } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -69,30 +98,78 @@ ChartJS.register(
   LinearScale
 )
 
-/* STATE */
-const filter = ref('week') // week = Daily
+const { $api } = useNuxtApp()
+
+/* =========================
+   STATE
+========================= */
+const bookings = ref([])
+const filter = ref('week')
 const selectedMonth = ref(new Date().getMonth())
 const selectedCabin = ref('all')
 
-/* DATA */
-const bookings = [
-  { date: '2026-01-10', price: 2000, cabin: 'Malobago' },
-  { date: '2026-01-15', price: 1800, cabin: 'Talisay' },
-  { date: '2026-02-05', price: 1500, cabin: 'Talisay' },
-  { date: '2026-03-20', price: 1800, cabin: 'Malobago' },
-  { date: '2026-04-01', price: 1500, cabin: 'Malobago' },
-  { date: '2026-04-03', price: 2000, cabin: 'Talisay' }
-]
+/* =========================
+   FETCH (🔥 FIXED)
+========================= */
+const fetchBookings = async () => {
+  try {
+    const res = await $api('/bookings', {
+      params: {
+        per_page: 1000 // make sure backend supports this
+      }
+    })
 
-/* FILTER */
+    // ✅ FIX: get actual array
+    bookings.value = res.data || []
+
+    console.log('ALL BOOKINGS:', bookings.value)
+
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+onMounted(fetchBookings)
+
+/* =========================
+   HELPERS
+========================= */
+const parseLocal = (dt) => {
+  if (!dt) return null
+  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0]
+  return new Date(clean)
+}
+
+const normalizeCabin = (name) => {
+  return name?.toLowerCase().replace(' cabin', '').trim()
+}
+
+/* =========================
+   FILTER BOOKINGS
+========================= */
 const filteredBookings = computed(() => {
-  if (selectedCabin.value === 'all') return bookings
-  return bookings.filter(b => b.cabin === selectedCabin.value)
+  return bookings.value.filter(b => {
+
+    // ❌ skip cancelled
+    if (b.status === 'cancelled') return false
+
+    // ✅ show all
+    if (selectedCabin.value === 'all') return true
+
+    // ✅ match cabin safely
+    return normalizeCabin(b.cabin)
+      ?.includes(selectedCabin.value.toLowerCase())
+  })
 })
 
-/* TOTAL */
+/* =========================
+   TOTAL REVENUE
+========================= */
 const totalRevenue = computed(() => {
-  return filteredBookings.value.reduce((sum, b) => sum + b.price, 0)
+  return filteredBookings.value.reduce(
+    (sum, b) => sum + Number(b.paid || 0),
+    0
+  )
 })
 
 const months = [
@@ -100,37 +177,69 @@ const months = [
   'July','August','September','October','November','December'
 ]
 
-/* DAILY (BY MONTH) */
+/* =========================
+   DAILY REVENUE
+========================= */
 const generateDailyByMonth = (monthIndex) => {
   const year = new Date().getFullYear()
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
 
   const result = Array(daysInMonth).fill(0)
 
-  filteredBookings.value.forEach(b => {
-    const d = new Date(b.date)
+const parseDateOnly = (dt) => {
+  if (!dt) return null
 
-    if (d.getMonth() === monthIndex) {
-      result[d.getDate() - 1] += b.price
+  // 🔥 REMOVE TIME + UTC SHIFT
+  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0]
+  return new Date(clean)
+}
+
+
+  filteredBookings.value.forEach(b => {
+    const start = parseDateOnly(b.start_datetime)
+    const end = parseDateOnly(b.end_datetime)
+
+    if (!start || !end) return
+
+    const days = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1
+    const perDay = Number(b.paid || 0) / days
+
+    let current = new Date(start)
+
+    while (current <= end) {
+      if (
+        current.getMonth() === monthIndex &&
+        current.getFullYear() === year
+      ) {
+        result[current.getDate() - 1] += perDay
+      }
+
+      current.setDate(current.getDate() + 1)
     }
   })
 
   return result
 }
 
-/* MONTHLY (YEAR VIEW) */
+/* =========================
+   MONTHLY REVENUE
+========================= */
 const generateYearlyRevenue = () => {
   const result = Array(12).fill(0)
 
   filteredBookings.value.forEach(b => {
-    const d = new Date(b.date)
-    result[d.getMonth()] += b.price
+    const start = parseLocal(b.start_datetime)
+    if (!start) return
+
+    result[start.getMonth()] += Number(b.paid || 0)
   })
 
   return result
 }
 
-/* CHART DATA */
+/* =========================
+   CHART DATA
+========================= */
 const chartData = computed(() => {
 
   const baseDataset = {
@@ -139,7 +248,6 @@ const chartData = computed(() => {
     barThickness: 20
   }
 
-  // MONTHLY VIEW (Jan–Dec)
   if (filter.value === 'year') {
     return {
       labels: months,
@@ -150,7 +258,6 @@ const chartData = computed(() => {
     }
   }
 
-  // DAILY VIEW (1–31 of selected month)
   const daysInMonth = new Date(
     new Date().getFullYear(),
     selectedMonth.value + 1,
@@ -166,7 +273,9 @@ const chartData = computed(() => {
   }
 })
 
-/* OPTIONS */
+/* =========================
+   OPTIONS
+========================= */
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -192,3 +301,4 @@ const chartOptions = {
   max-height: 300px;
 }
 </style>
+```

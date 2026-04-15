@@ -13,55 +13,112 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 definePageMeta({ layout: 'admin' })
 
 import AdminStatsCards from '~/components/admin/StatsCards.vue'
 import AdminRevenueChart from '~/components/admin/RevenueChart.vue'
 
-/* 🔥 SAMPLE BOOKINGS (replace with real data later) */
-const bookings = [
-  { date: '2026-04-03', shift: 'AM' },
-  { date: '2026-04-03', shift: 'PM' }, // full day
-  { date: '2026-04-04', shift: 'AM' }, // partial
-  { date: '2026-04-05', shift: 'PM' }, // partial
-  { date: '2026-04-06', shift: 'AM' },
-  { date: '2026-04-06', shift: 'PM' }  // full
-]
+const { $api } = useNuxtApp()
 
+/* =========================
+   STATE
+========================= */
+const bookings = ref([])
+
+/* =========================
+   FETCH BOOKINGS
+========================= */
+const fetchBookings = async () => {
+  try {
+    const res = await $api('/bookings', {
+      params: {
+        per_page: 1000 // get all
+      }
+    })
+
+    bookings.value = res.data
+
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+onMounted(fetchBookings)
+
+/* =========================
+   DATE HELPERS
+========================= */
+const parseLocal = (dt) => {
+  if (!dt) return null
+  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0]
+  return new Date(clean)
+}
+
+const formatDate = (date) => {
+  return date.toISOString().split('T')[0]
+}
+
+/* =========================
+   CURRENT MONTH
+========================= */
 const currentMonth = '2026-04'
 
-/* GROUP BY DATE */
+/* =========================
+   GROUP BOOKINGS BY DATE
+========================= */
 const grouped = computed(() => {
   const map = {}
 
-  bookings.forEach(b => {
-    if (!b.date.startsWith(currentMonth)) return
+  bookings.value.forEach(b => {
+    const start = parseLocal(b.start_datetime)
+    const end = parseLocal(b.end_datetime)
 
-    if (!map[b.date]) map[b.date] = []
+    if (!start || !end) return
 
-    map[b.date].push(b.shift)
+    let current = new Date(start)
+
+    while (current <= end) {
+      const dateStr = formatDate(current)
+
+      if (!dateStr.startsWith(currentMonth)) {
+        current.setDate(current.getDate() + 1)
+        continue
+      }
+
+      if (!map[dateStr]) map[dateStr] = []
+
+      map[dateStr].push(b)
+
+      current.setDate(current.getDate() + 1)
+    }
   })
 
   return map
 })
 
-/* FULLY BOOKED */
+/* =========================
+   FULLY BOOKED (2+ bookings)
+========================= */
 const bookedDays = computed(() => {
-  return Object.values(grouped.value).filter(shifts =>
-    shifts.includes('AM') && shifts.includes('PM')
+  return Object.values(grouped.value).filter(dayBookings =>
+    dayBookings.length >= 2
   ).length
 })
 
-/* PARTIAL */
+/* =========================
+   PARTIAL (1 booking)
+========================= */
 const partialDays = computed(() => {
-  return Object.values(grouped.value).filter(shifts =>
-    shifts.length === 1
+  return Object.values(grouped.value).filter(dayBookings =>
+    dayBookings.length === 1
   ).length
 })
 
-/* AVAILABLE */
+/* =========================
+   AVAILABLE
+========================= */
 const availableDays = computed(() => {
   const totalDays = new Date(2026, 4, 0).getDate()
   return totalDays - bookedDays.value - partialDays.value

@@ -1,3 +1,4 @@
+```vue
 <template>
   <div class="row g-3">
 
@@ -26,50 +27,104 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
-/* 🔥 SAMPLE BOOKINGS (REPLACE WITH API LATER) */
-const bookings = [
-  { date: '2026-04-03', shift: 'AM', status: 'booked', price: 1500 },
-  { date: '2026-04-03', shift: 'PM', status: 'booked', price: 1500 },
-  { date: '2026-04-04', shift: 'AM', status: 'pending', price: 1500 },
-  { date: '2026-04-05', shift: 'PM', status: 'cancelled', price: 1500 },
-  { date: '2026-04-06', shift: 'AM', status: 'booked', price: 1500 },
-  { date: '2026-04-06', shift: 'PM', status: 'booked', price: 1500 }
-]
-
-const currentYear = '2026'
-const currentMonth = '2026-04'
+const { $api } = useNuxtApp()
 
 /* =========================
-   TOTAL REVENUE (YEAR)
+   STATE
+========================= */
+const bookings = ref([])
+
+/* =========================
+   FETCH
+========================= */
+const fetchBookings = async () => {
+  try {
+    const res = await $api('/bookings', {
+      params: { per_page: 1000 }
+    })
+
+    bookings.value = res.data || []
+
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+onMounted(fetchBookings)
+
+defineExpose({
+  fetchBookings
+})
+
+/* =========================
+   HELPERS
+========================= */
+const parseLocal = (dt) => {
+  if (!dt) return null
+  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0]
+  return new Date(clean)
+}
+
+const formatDate = (date) => {
+  return date.toISOString().split('T')[0]
+}
+
+const isConfirmed = (b) =>
+  b.status?.toLowerCase().trim() === 'confirmed'
+
+const isCancelled = (b) =>
+  ['cancelled', 'canceled'].includes(
+    b.status?.toLowerCase().trim()
+  )
+
+/* =========================
+   DATE
+========================= */
+const now = new Date()
+const currentYear = now.getFullYear().toString()
+const currentMonth = now.toISOString().slice(0, 7)
+
+/* =========================
+   💰 REVENUE (CONFIRMED ONLY)
 ========================= */
 const totalRevenue = computed(() => {
-  return bookings
-    .filter(b => b.date.startsWith(currentYear) && b.status === 'booked')
-    .reduce((sum, b) => sum + (b.price || 0), 0)
+  return bookings.value
+    .filter(b =>
+      isConfirmed(b) &&
+      b.start_datetime?.startsWith(currentYear)
+    )
+    .reduce((sum, b) => sum + Number(b.paid || 0), 0)
 })
 
 /* =========================
-   CANCELLED
-========================= */
-const cancelledCount = computed(() => {
-  return bookings.filter(b => b.status === 'cancelled').length
-})
-
-/* =========================
-   GROUP BY DATE (MONTH)
+   📅 GROUP BOOKINGS (ALL)
 ========================= */
 const grouped = computed(() => {
   const map = {}
 
-  bookings.forEach(b => {
-    if (!b.date.startsWith(currentMonth)) return
+  bookings.value.forEach(b => {
+    const start = parseLocal(b.start_datetime)
+    const end = parseLocal(b.end_datetime)
 
-    if (!map[b.date]) map[b.date] = []
+    if (!start || !end) return
 
-    if (b.status === 'booked') {
-      map[b.date].push(b.shift)
+    let current = new Date(start)
+
+    while (current <= end) {
+      const dateStr = formatDate(current)
+
+      if (!dateStr.startsWith(currentMonth)) {
+        current.setDate(current.getDate() + 1)
+        continue
+      }
+
+      if (!map[dateStr]) map[dateStr] = []
+
+      map[dateStr].push(b)
+
+      current.setDate(current.getDate() + 1)
     }
   })
 
@@ -77,24 +132,82 @@ const grouped = computed(() => {
 })
 
 /* =========================
-   FULLY BOOKED DAYS
+   📅 BOOKED DAYS (ALL)
 ========================= */
 const bookedDays = computed(() => {
-  return Object.values(grouped.value).filter(shifts =>
-    shifts.includes('AM') && shifts.includes('PM')
-  ).length
+  return Object.keys(grouped.value).length
 })
 
 /* =========================
-   AVAILABLE DAYS
+   🏝️ BOOKED DAYS PER CABIN
 ========================= */
-const availableDays = computed(() => {
-  const totalDays = new Date(2026, 4, 0).getDate()
-  return totalDays - bookedDays.value
+const bookedDaysPerCabin = computed(() => {
+  const map = {
+    talisay: new Set(),
+    malobago: new Set()
+  }
+
+  bookings.value.forEach(b => {
+    const cabin = b.cabin?.toLowerCase()
+
+    const start = parseLocal(b.start_datetime)
+    const end = parseLocal(b.end_datetime)
+
+    if (!start || !end) return
+
+    let current = new Date(start)
+
+    while (current <= end) {
+      const dateStr = formatDate(current)
+
+      if (!dateStr.startsWith(currentMonth)) {
+        current.setDate(current.getDate() + 1)
+        continue
+      }
+
+      if (cabin.includes('talisay')) {
+        map.talisay.add(dateStr)
+      }
+
+      if (cabin.includes('malobago')) {
+        map.malobago.add(dateStr)
+      }
+
+      current.setDate(current.getDate() + 1)
+    }
+  })
+
+  return {
+    talisay: map.talisay.size,
+    malobago: map.malobago.size
+  }
 })
 
 /* =========================
-   FINAL CARDS (ONLY 4)
+   📆 AVAILABLE DAYS PER CABIN
+========================= */
+const availableDaysPerCabin = computed(() => {
+  const totalDays = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0
+  ).getDate()
+
+  return {
+    talisay: totalDays - bookedDaysPerCabin.value.talisay,
+    malobago: totalDays - bookedDaysPerCabin.value.malobago
+  }
+})
+
+/* =========================
+   ❌ CANCELLED COUNT
+========================= */
+const cancelledCount = computed(() => {
+  return bookings.value.filter(b => isCancelled(b)).length
+})
+
+/* =========================
+   FINAL CARDS
 ========================= */
 const cards = computed(() => [
   {
@@ -113,7 +226,7 @@ const cards = computed(() => [
   },
   {
     label: "Available Days",
-    value: availableDays.value,
+    value: `Talisay: ${availableDaysPerCabin.value.talisay} | Malobago: ${availableDaysPerCabin.value.malobago}`,
     icon: "mdi:calendar",
     color: "#2563eb",
     bg: "#eff6ff"
@@ -151,7 +264,7 @@ const cards = computed(() => [
 }
 
 .stat-value {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
 }
 
