@@ -217,9 +217,10 @@ const cards = computed(() => [
     color: "#3b82f6",
     bg: "#eff6ff"
   },
+
   {
     label: "Booked Days",
-    value: bookedDays.value,
+    value: `Talisay: ${bookedDaysPerCabin.value.talisay} | Malobago: ${bookedDaysPerCabin.value.malobago}`,
     icon: "mdi:calendar-check",
     color: "#10b981",
     bg: "#ecfdf5"

@@ -1,88 +1,76 @@
 <template>
   <span><h4 class="mb-3 fw-bold">Rooms</h4></span>
+
   <div class="container-fluid py-4 px-4">
-    
     <div class="row">
 
-      <!-- LEFT: Rooms List -->
+      <!-- LEFT -->
       <div class="col-md-8">
         <div class="card shadow-sm border-0 rounded-4 p-4">
 
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold mb-0">Rooms List</h5>
+          <div class="d-flex justify-content-between mb-3">
+            <h5 class="fw-bold">Rooms List</h5>
 
             <input
               v-model="search"
-              type="text"
               class="form-control form-control-sm"
-              style="max-width: 280px;"
-              placeholder="Search room..."
+              style="max-width: 250px"
+              placeholder="Search room"
             />
           </div>
 
-          <table class="table align-middle" style="table-layout: fixed;">
-            <thead class="text-muted small">
+          <table class="table align-middle">
+            <thead>
               <tr>
-                <th style="width: 90px;">Image</th>
-                <th>Room</th>
-                <th style="width: 130px;">Price</th>
-                <th style="width: 80px;" class="text-center">Max Pax</th>
-                <th style="width: 120px;">Status</th>
-                <th style="width: 180px;">Actions</th>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Pax</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
 
             <tbody>
               <tr v-for="room in filteredRooms" :key="room.id">
-
                 <td>
                   <img
-                    :src="room.image"
-                    style="width: 70px; height: 55px; object-fit: cover; border-radius: 8px;"
+                    :src="getImage(room.image)"
+                    style="width:70px;height:55px;object-fit:cover;border-radius:8px"
                   />
                 </td>
 
-                <td class="fw-semibold text-truncate">
-                  {{ room.name }}
-                </td>
+                <td>{{ room.name }}</td>
+                <td>₱ {{ room.price }}</td>
+                <td>{{ room.max_pax }}</td>
 
                 <td>
-                  ₱ {{ room.price }} <small class="text-muted">/ night</small>
-                </td>
-
-                <td class="text-center">
-                  {{ room.maxPax }}
-                </td>
-
-                <td>
-                  <span
-                    class="badge"
-                    :class="room.available ? 'bg-success' : 'bg-secondary'"
-                  >
+                  <span class="badge" :class="room.available ? 'bg-success' : 'bg-secondary'">
                     {{ room.available ? 'Available' : 'Maintenance' }}
                   </span>
                 </td>
 
                 <td>
-                  <div class="d-flex align-items-center gap-1">
-                    <button class="btn btn-sm btn-warning px-2" @click="editRoom(room)">
+                  <div class="d-flex gap-2">
+
+                    <button
+                      class="btn btn-sm btn-warning d-flex align-items-center gap-1 px-3"
+                      @click="editRoom(room)"
+                    >
+                      <Icon name="mdi:pencil" />
                       Edit
                     </button>
 
-                    <button class="btn btn-sm btn-danger px-2" @click="deleteRoom(room.id)">
+                    <button
+                      class="btn btn-sm btn-danger d-flex align-items-center gap-1 px-3"
+                      @click="deleteRoom(room.id)"
+                    >
+                      <Icon name="mdi:delete" />
                       Delete
                     </button>
 
-                    <button
-                      class="btn btn-sm px-2"
-                      :class="room.available ? 'btn-dark' : 'btn-success'"
-                      @click="room.available = !room.available"
-                    >
-                      {{ room.available ? 'Disable' : 'Enable' }}
-                    </button>
                   </div>
                 </td>
-
               </tr>
 
               <tr v-if="filteredRooms.length === 0">
@@ -96,67 +84,41 @@
         </div>
       </div>
 
-      <!-- RIGHT SIDE -->
+      <!-- RIGHT -->
       <div class="col-md-4">
+        <div class="card shadow-sm border-0 rounded-4 p-4">
 
-        <!-- Add/Edit Room -->
-        <div class="card shadow-sm border-0 rounded-4 p-4 mb-3">
           <h5 class="fw-bold mb-3">
             {{ isEdit ? "Edit Room" : "Add Room" }}
           </h5>
 
-          <input v-model="form.name" class="form-control form-control-sm mb-2" placeholder="Room Name" />
-          <input v-model="form.price" type="number" class="form-control form-control-sm mb-2" placeholder="Base Price" />
-          <input v-model="form.maxPax" type="number" class="form-control form-control-sm mb-2" placeholder="Max Pax" />
+          <input v-model="form.name" class="form-control mb-2" placeholder="Name" />
+          <input v-model="form.price" type="number" class="form-control mb-2" placeholder="Price" />
+          <input v-model="form.max_pax" type="number" class="form-control mb-2" placeholder="Max Pax" />
 
-          <!-- ✅ FILE UPLOAD -->
-          <input
-            type="file"
-            class="form-control form-control-sm mb-3"
-            accept="image/*"
-            @change="handleImageUpload"
-          />
+          <input type="file" class="form-control mb-2" @change="handleImageUpload" />
 
-          <!-- Preview -->
-          <div v-if="form.image" class="mb-3 text-center">
-            <img
-              :src="form.image"
-              style="width: 100%; height: 140px; object-fit: cover; border-radius: 10px;"
-            />
+          <div v-if="form.image" class="mb-2">
+            <img :src="form.image" style="width:100%;height:120px;object-fit:cover" />
           </div>
 
-          <button class="btn btn-primary w-100 rounded-3" @click="saveRoom">
-            {{ isEdit ? "Update Room" : "Add Room" }}
+          <button
+            class="btn btn-primary w-100"
+            :disabled="loading"
+            @click="saveRoom"
+          >
+            {{ loading ? 'Saving...' : (isEdit ? "Update Room" : "Create Room") }}
           </button>
 
-          <button v-if="isEdit" class="btn btn-secondary w-100 mt-2" @click="resetForm">
-            Cancel Edit
+          <button
+            v-if="isEdit"
+            class="btn btn-secondary w-100 mt-2"
+            @click="resetForm"
+          >
+            Cancel
           </button>
+
         </div>
-
-        <!-- Price Calculator -->
-        <div class="card shadow-sm border-0 rounded-4 p-4">
-          <h6 class="fw-bold mb-3">💡 Price Calculator</h6>
-
-          <input v-model="calcGuests" type="number" class="form-control form-control-sm mb-2" placeholder="Guests" />
-
-          <select v-model="selectedRoomId" class="form-select form-select-sm mb-3">
-            <option disabled value="">Select Room</option>
-            <option v-for="r in rooms" :key="r.id" :value="r.id">
-              {{ r.name }}
-            </option>
-          </select>
-
-          <div v-if="selectedRoom && calcGuests > selectedRoom.maxPax" class="text-danger small mb-2">
-            +₱ {{ (calcGuests - selectedRoom.maxPax) * 100 }} extra
-          </div>
-
-          <div class="text-center mt-2">
-            <h4 class="fw-bold text-primary">₱ {{ computedPrice }}</h4>
-            <small class="text-muted">Total Price</small>
-          </div>
-        </div>
-
       </div>
 
     </div>
@@ -164,89 +126,175 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed, onMounted } from 'vue'
+import { useToast } from 'vue-toastification'
 
-definePageMeta({ layout: "admin" })
+definePageMeta({ layout: 'admin' })
 
-const rooms = ref([
-  {
-    id: 1,
-    name: "Talisay Cabin",
-    price: 1500,
-    maxPax: 4,
-    image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511",
-    available: true
-  }
-])
+const { $api } = useNuxtApp()
+const toast = useToast() // ✅ CORRECT WAY
 
-const search = ref("")
+/* STATE */
+const rooms = ref([])
+const search = ref('')
 const isEdit = ref(false)
+const loading = ref(false)
 
 const form = ref({
   id: null,
-  name: "",
-  price: "",
-  maxPax: "",
-  image: "",
+  name: '',
+  price: '',
+  max_pax: '',
+  file: null,
+  image: '',
   available: true
 })
+
+/* FETCH */
+const fetchRooms = async () => {
+  try {
+    const res = await $api('/rooms')
+    rooms.value = res.data || res
+  } catch (err) {
+    handleError(err)
+  }
+}
+
+onMounted(fetchRooms)
+
+/* IMAGE */
+const getImage = (img) => {
+  if (!img) return 'https://via.placeholder.com/70'
+  if (img.startsWith('blob')) return img
+  return `http://127.0.0.1:8000/storage/${img}`
+}
 
 const handleImageUpload = (e) => {
   const file = e.target.files[0]
   if (!file) return
 
+  form.value.file = file
   form.value.image = URL.createObjectURL(file)
 }
 
+/* FILTER */
 const filteredRooms = computed(() =>
-  rooms.value.filter(r => r.name.toLowerCase().includes(search.value.toLowerCase()))
+  rooms.value.filter(r =>
+    r.name.toLowerCase().includes(search.value.toLowerCase())
+  )
 )
 
-const saveRoom = () => {
-  if (!form.value.name || !form.value.price || !form.value.maxPax) return
+/* SAVE */
+const saveRoom = async () => {
+  loading.value = true
 
-  if (isEdit.value) {
-    const i = rooms.value.findIndex(r => r.id === form.value.id)
-    rooms.value[i] = { ...form.value }
-  } else {
-    form.value.id = Date.now()
-    rooms.value.push({ ...form.value })
+  try {
+    const formData = new FormData()
+
+    formData.append('name', form.value.name)
+    formData.append('price', form.value.price)
+    formData.append('max_pax', form.value.max_pax)
+
+    // ✅ FIX BOOLEAN
+    formData.append('available', form.value.available ? 1 : 0)
+
+    if (form.value.file) {
+      formData.append('image', form.value.file)
+    }
+
+    if (isEdit.value) {
+      formData.append('_method', 'PUT')
+
+      await $api(`/rooms/${form.value.id}`, {
+        method: 'POST',
+        body: formData
+      })
+
+      toast.success('Room updated successfully ✅')
+    } else {
+      await $api('/rooms', {
+        method: 'POST',
+        body: formData
+      })
+
+      toast.success('Room created successfully ✅')
+    }
+
+    await fetchRooms()
+    resetForm()
+
+  } catch (err) {
+    handleError(err)
   }
 
-  resetForm()
+  loading.value = false
 }
 
+/* EDIT */
 const editRoom = (room) => {
   isEdit.value = true
-  form.value = { ...room }
+  form.value = {
+    ...room,
+    image: getImage(room.image),
+    file: null
+  }
 }
 
-const deleteRoom = (id) => {
-  rooms.value = rooms.value.filter(r => r.id !== id)
+/* DELETE */
+const deleteRoom = async (id) => {
+  if (!confirm('Are you sure?')) return
+
+  try {
+    await $api(`/rooms/${id}`, { method: 'DELETE' })
+
+    toast.success('Room deleted 🗑️')
+    fetchRooms()
+
+  } catch (err) {
+    handleError(err)
+  }
 }
 
+/* RESET */
 const resetForm = () => {
   isEdit.value = false
   form.value = {
     id: null,
-    name: "",
-    price: "",
-    maxPax: "",
-    image: "",
+    name: '',
+    price: '',
+    max_pax: '',
+    file: null,
+    image: '',
     available: true
   }
 }
 
-const calcGuests = ref()
-const selectedRoomId = ref("")
+/* ERROR HANDLER */
+const handleError = (err) => {
+  console.error('🔥 BACKEND ERROR:', err)
 
-const selectedRoom = computed(() =>
-  rooms.value.find(r => r.id === selectedRoomId.value)
-)
+  if (err?.data?.message) {
+    toast.error(err.data.message)
+    return
+  }
 
-const computedPrice = computed(() => {
-  if (!selectedRoom.value) return 0
-  const extra = Math.max(0, calcGuests.value - selectedRoom.value.maxPax)
-  return selectedRoom.value.price + extra * 100
-})
+  if (err?.data?.errors) {
+    Object.values(err.data.errors).forEach(errors => {
+      errors.forEach(msg => toast.error(msg))
+    })
+    return
+  }
+
+  toast.error('Something went wrong ❌')
+}
 </script>
+
+<style scoped>
+.table td {
+  vertical-align: middle;
+}
+
+.btn {
+  border-radius: 8px;
+}
+</style>
