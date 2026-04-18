@@ -50,72 +50,50 @@
               <th>Amount</th>
               <th>Payment</th>
               <th>Balance</th>
+              <th>Status</th>
               <th class="text-center">Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            <!-- LOADING -->
             <tr v-if="loading">
               <td colspan="10" class="text-center py-4">
                 <div class="spinner-border text-primary"></div>
               </td>
             </tr>
 
-            <!-- DATA -->
-            <tr v-else-if="inventory.length > 0" v-for="item in inventory" :key="item.id">
+            <tr
+              v-else-if="inventory.length > 0"
+              v-for="item in inventory"
+              :key="item.id"
+            >
               <td>{{ item.name }}</td>
               <td>{{ item.address }}</td>
+              <td class="fw-semibold text-muted">{{ item.cabin }}</td>
 
-              <!-- ✅ REMOVED BADGE -->
-              <td class="fw-semibold text-muted">
-                {{ item.cabin }}
-              </td>
-
-              <!-- ✅ CLEAN SCHEDULE -->
               <td>
                 <div class="d-flex flex-column" style="font-size: 13px;">
-
-                  <!-- DATE -->
-                  <div class="d-flex align-items-center gap-1 fw-semibold">
-                    <Icon name="mdi:calendar" size="14" />
-
-                    <span>
-                      {{ formatFullDate(item.start_datetime) }}
-
-                      <span v-if="isOvernight(item)">
-                        → {{ formatFullDate(item.end_datetime) }}
-                      </span>
-                    </span>
-
-                    <span
-                      v-if="isOvernight(item)"
-                      class="badge bg-danger-subtle text-danger ms-2 px-2 py-1 d-inline-flex align-items-center gap-1"
-                      style="font-size: 10px; border-radius: 6px;"
-                    >
-                      <Icon name="mdi:weather-night" size="10" />
-                      
+                  <div class="fw-semibold">
+                    {{ formatFullDate(item.start_datetime) }}
+                    <span v-if="isOvernight(item)">
+                      → {{ formatFullDate(item.end_datetime) }}
                     </span>
                   </div>
-
-                  <!-- TIME -->
-                  <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 12px;">
-                    <Icon name="mdi:clock-outline" size="14" />
-
-                    <span>
-                      {{ formatTime(item.start_datetime) }}
-                      →
-                      {{ formatTime(item.end_datetime) }}
-                    </span>
+                  <div class="text-muted" style="font-size: 12px;">
+                    {{ formatTime(item.start_datetime) }}
+                    →
+                    {{ formatTime(item.end_datetime) }}
                   </div>
-
                 </div>
               </td>
 
               <td>{{ item.guests }}</td>
 
               <td>
-                <span class="badge" :class="item.videoke ? 'bg-success' : 'bg-secondary'">
+                <span
+                  class="badge"
+                  :class="item.videoke ? 'bg-success' : 'bg-secondary'"
+                >
                   {{ item.videoke ? "Yes" : "No" }}
                 </span>
               </td>
@@ -131,38 +109,52 @@
               </td>
 
               <td>
-                <span :class="getBalance(item) === 0 ? 'text-success' : 'text-danger'">
+                <span
+                  :class="getBalance(item) === 0 ? 'text-success' : 'text-danger'"
+                >
                   ₱{{ formatMoney(getBalance(item)) }}
                 </span>
               </td>
 
+              <td>
+                <span
+                  class="badge"
+                  :class="getStatusClass(item)"
+                >
+                  {{ getStatusLabel(item) }}
+                </span>
+              </td>
+
               <td class="text-center">
-                <button
-                  class="btn btn-sm btn-outline-primary me-2"
-                  @click="editItem(item)"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addBookingModal"
-                >
-                  <Icon name="mdi:pencil" size="18" />
-                </button>
+                <div class="d-flex justify-content-center gap-2">
 
-                <button
-                  class="btn btn-sm btn-outline-danger me-2"
-                  @click="deleteItem(item.id)"
-                >
-                  <Icon name="mdi:delete" size="18" />
-                </button>
+                  <button
+                    class="btn btn-light border"
+                    @click="editItem(item)"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addBookingModal"
+                  >
+                    <Icon name="mdi:pencil" size="18" />
+                  </button>
 
-                <button
-                  class="btn btn-sm btn-warning"
-                  @click="addPayment(item)"
-                >
-                  <Icon name="mdi:cash-plus" size="18" />
-                </button>
+                  <button
+                    class="btn btn-light border text-danger"
+                    @click="deleteItem(item.id)"
+                  >
+                    <Icon name="mdi:delete" size="18" />
+                  </button>
+
+                  <button
+                    class="btn btn-light border text-warning"
+                    @click="addPayment(item)"
+                  >
+                    <Icon name="mdi:cash-plus" size="18" />
+                  </button>
+
+                </div>
               </td>
             </tr>
 
-            <!-- EMPTY -->
             <tr v-else>
               <td colspan="10" class="text-center py-3">
                 No records found.
@@ -214,7 +206,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, nextTick } from "vue";
 import axios from "axios";
 import AddBookingModal from "@/components/admin/AddBookingModal.vue";
 import PaymentModal from "@/components/admin/PaymentModal.vue";
@@ -225,6 +217,7 @@ const { $bootstrap } = useNuxtApp();
 
 const API_URL = "http://127.0.0.1:8000/api";
 
+/* STATE */
 const inventory = ref([]);
 const currentPage = ref(1);
 const lastPage = ref(1);
@@ -235,133 +228,148 @@ const status = ref("");
 
 let debounceTimeout = null;
 
+/* FETCH */
 const fetchBookings = async (page = 1) => {
   loading.value = true;
 
   try {
     const res = await axios.get(`${API_URL}/bookings`, {
-      params: {
-        page,
-        search: search.value,
-        status: status.value,
-      },
+      params: { page, search: search.value, status: status.value },
     });
 
-    inventory.value = res.data.data;
-    currentPage.value = res.data.current_page;
-    lastPage.value = res.data.last_page;
+    inventory.value = res.data.data || [];
+    currentPage.value = res.data.current_page || 1;
+    lastPage.value = res.data.last_page || 1;
 
+  } catch (err) {
+    console.error(err);
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(() => fetchBookings());
+onMounted(fetchBookings);
 
+/* SEARCH */
 const handleSearch = () => {
   clearTimeout(debounceTimeout);
-  debounceTimeout = setTimeout(() => {
-    fetchBookings(1);
-  }, 400);
+  debounceTimeout = setTimeout(() => fetchBookings(1), 400);
 };
 
-/* =========================
-   🔥 FIXED DATETIME PARSER
-========================= */
+/* DATETIME */
+const toServerDateTime = (dt) => {
+  if (!dt) return null;
+  const d = new Date(dt);
+  if (isNaN(d)) return null;
+
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:00`;
+};
+
 const parseLocal = (dt) => {
   if (!dt) return null;
-
-  // remove UTC conversion
-  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0];
-  return new Date(clean);
+  return new Date(dt.replace("T"," ").replace("Z",""));
 };
 
-/* =========================
-   FORMATTERS
-========================= */
+/* FORMAT */
 const formatFullDate = (dt) => {
   const d = parseLocal(dt);
   if (!d) return "";
 
-  return d.toLocaleDateString([], {
-    year: "numeric",
+  return d.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    year: "numeric",
   });
 };
+const formatTime = (dt) => parseLocal(dt)?.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) || "";
 
-const formatTime = (dt) => {
-  const d = parseLocal(dt);
-  if (!d) return "";
-
-  return d.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const isOvernight = (i) => {
+  const s = parseLocal(i.start_datetime);
+  const e = parseLocal(i.end_datetime);
+  return s && e && s.toDateString() !== e.toDateString();
 };
 
-/* =========================
-   🔥 OVERNIGHT DETECTION
-========================= */
-const isOvernight = (item) => {
-  const start = parseLocal(item.start_datetime);
-  const end = parseLocal(item.end_datetime);
-
-  if (!start || !end) return false;
-
-  return start.toDateString() !== end.toDateString();
-};
-
-/* =========================
-   HELPERS
-========================= */
-const formatMoney = (v) => Number(v).toLocaleString();
-
-const getBalance = (i) => i.amount - i.paid;
+/* HELPERS */
+const formatMoney = (v) => Number(v || 0).toLocaleString();
+const getBalance = (i) => (i.amount || 0) - (i.paid || 0);
 
 const getPaymentStatus = (i) =>
-  i.paid >= i.amount ? "Fully Paid" : "Partially Paid";
+  (i.paid || 0) >= (i.amount || 0)
+    ? "Fully Paid"
+    : "Partially Paid";
 
 const getPaymentStatusClass = (i) =>
-  i.paid >= i.amount ? "bg-success" : "bg-warning text-dark";
+  (i.paid || 0) >= (i.amount || 0)
+    ? "bg-success"
+    : "bg-warning text-dark";
 
-/* =========================
-   ACTIONS
-========================= */
+    const getStatusLabel = (i) => {
+  if (i.status === "cancelled") return "Cancelled";
+  return "Confirmed";
+};
+
+const getStatusClass = (i) => {
+  if (i.status === "cancelled") {
+    return "bg-danger-subtle text-danger";
+  }
+  return "bg-success-subtle text-success";
+};
+/* ACTIONS */
 const selectedItem = ref(null);
 const selectedPaymentItem = ref(null);
 
 const openAdd = () => (selectedItem.value = null);
 const editItem = (i) => (selectedItem.value = { ...i });
 
-const addPayment = (i) => {
+const addPayment = async (i) => {
   selectedPaymentItem.value = i;
-  new $bootstrap.Modal(document.getElementById("paymentModal")).show();
+
+  await nextTick();
+
+  const el = document.getElementById("paymentModal");
+  if (!el) return;
+
+  const modal = new $bootstrap.Modal(el);
+  modal.show();
 };
 
+/* PAYMENT */
 const handlePaymentConfirm = async (amount) => {
   await axios.post(
     `${API_URL}/bookings/${selectedPaymentItem.value.id}/payment`,
     { amount }
   );
+
   fetchBookings(currentPage.value);
 };
 
+/* SAVE */
 const handleSave = async (data) => {
-  if (selectedItem.value) {
-    await axios.put(
-      `${API_URL}/bookings/${selectedItem.value.id}`,
-      data
-    );
-  } else {
-    await axios.post(`${API_URL}/bookings`, data);
-  }
+  const payload = {
+    ...data,
+    start_datetime: toServerDateTime(data.start_datetime),
+    end_datetime: toServerDateTime(data.end_datetime),
+    paid: data.paid ?? 0,
+    status: data.status ?? "confirmed",
+  };
 
-  fetchBookings(currentPage.value);
+  try {
+    if (selectedItem.value) {
+      await axios.put(`${API_URL}/bookings/${selectedItem.value.id}`, payload);
+    } else {
+      await axios.post(`${API_URL}/bookings`, payload);
+    }
+
+    fetchBookings(currentPage.value);
+  } catch (err) {
+    alert(err.response?.data?.message || "Error saving");
+  }
 };
 
+/* DELETE */
 const deleteItem = async (id) => {
   if (!confirm("Delete this booking?")) return;
+
   await axios.delete(`${API_URL}/bookings/${id}`);
   fetchBookings(currentPage.value);
 };
@@ -375,9 +383,5 @@ const deleteItem = async (id) => {
 table th,
 table td {
   vertical-align: middle;
-}
-
-td small {
-  font-size: 12px;
 }
 </style>
