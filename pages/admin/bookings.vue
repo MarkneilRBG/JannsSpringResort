@@ -38,19 +38,21 @@ const fetchBookings = async (page = 1) => {
     currentPage.value = res.current_page
     lastPage.value = res.last_page
 
+  } catch (err) {
+    console.error("Table fetch error:", err)
   } finally {
     loading.value = false
   }
 }
 
 /* =========================
-   FETCH CALENDAR (ALL DATA 🔥)
+   FETCH CALENDAR (ALL DATA)
 ========================= */
 const fetchCalendarBookings = async () => {
   try {
     const res = await $api('/bookings', {
       params: {
-        per_page: 1000 // get all
+        per_page: 1000
       }
     })
 
@@ -66,7 +68,7 @@ const fetchCalendarBookings = async () => {
 ========================= */
 onMounted(() => {
   fetchBookings()
-  fetchCalendarBookings() // 🔥 IMPORTANT
+  fetchCalendarBookings()
 })
 
 /* =========================
@@ -82,14 +84,16 @@ const handleDateFilter = (date) => {
   <div>
     <h4 class="fw-bold mb-3">Bookings</h4>
 
-    <!-- 📅 CALENDAR (ALL BOOKINGS) -->
+    <!-- 📅 CALENDAR -->
     <div>
-      <AdminBookingCalendar
-        :bookings="calendarBookings"
-      />
+    <AdminBookingCalendar
+      :bookings="calendarBookings"
+      @create-booking="openCreateModal"
+      @update-booking="updateBooking"
+    />
     </div>
 
-    <!-- 📋 TABLE (FILTERED) -->
+    <!-- 📋 TABLE -->
     <div class="mt-4">
       <AdminBookingTable
         :bookings="bookings"

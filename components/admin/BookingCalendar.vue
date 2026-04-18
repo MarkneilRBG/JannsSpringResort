@@ -28,17 +28,13 @@ const props = defineProps({
 const selectedCabin = ref('Talisay')
 
 /* =========================
-   🔥 FIX TIMEZONE (NO UTC SHIFT)
+   TIME FIX
 ========================= */
 const parseLocal = (dt) => {
   if (!dt) return null
-  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0]
-  return new Date(clean)
+  return new Date(dt.replace("T", " ").replace("Z", "").split(".")[0])
 }
 
-/* =========================
-   FORMAT TIME
-========================= */
 const formatTime = (dt) => {
   const d = parseLocal(dt)
   if (!d) return ''
@@ -49,16 +45,31 @@ const formatTime = (dt) => {
 }
 
 /* =========================
-   COLOR STATUS
+   STATUS
 ========================= */
-const getColor = (b) => {
-  if (b.paid >= b.amount) return '#10b981'   // green
-  if (b.paid > 0) return '#f59e0b'           // yellow
-  return '#dc3545'                           // red
+const getStatus = (b) => {
+  const status = b.status?.toLowerCase()
+
+  if (status === 'cancelled' || status === 'canceled') return 'cancelled'
+  if (b.paid >= b.amount) return 'paid'
+  if (b.paid > 0) return 'partial'
+  return 'reserved'
 }
 
 /* =========================
-   🔥 HOTEL STYLE EVENTS
+   COLOR
+========================= */
+const getColor = (status) => {
+  return {
+    paid: '#10b981',      // green
+    partial: '#f59e0b',   // yellow
+    reserved: '#3b82f6',  // blue
+    cancelled: '#fecaca'  // soft red
+  }[status]
+}
+
+/* =========================
+   EVENTS
 ========================= */
 const events = computed(() => {
   return (props.bookings || [])
@@ -67,25 +78,28 @@ const events = computed(() => {
         .toLowerCase()
         .includes(selectedCabin.value.toLowerCase())
     )
-    .map(b => ({
-      id: b.id,
+    .map(b => {
+      const status = getStatus(b)
 
-      title: b.name,
+      return {
+        id: b.id,
 
-      start: parseLocal(b.start_datetime),
-      end: parseLocal(b.end_datetime),
+        start: parseLocal(b.start_datetime),
+        end: parseLocal(b.end_datetime),
 
-      display: 'block', // 🔥 makes it a span bar
+        display: 'block',
 
-      backgroundColor: getColor(b),
-      borderColor: getColor(b),
+        backgroundColor: getColor(status),
+        borderColor: getColor(status),
 
-      extendedProps: {
-        fullName: b.name,
-        startTime: formatTime(b.start_datetime),
-        endTime: formatTime(b.end_datetime)
+        extendedProps: {
+          ...b,
+          status,
+          startTime: formatTime(b.start_datetime),
+          endTime: formatTime(b.end_datetime)
+        }
       }
-    }))
+    })
 })
 
 /* =========================
@@ -96,21 +110,34 @@ const calendarOptions = computed(() => ({
   initialView: 'dayGridMonth',
   height: 'auto',
 
-  timeZone: 'local', // 🔥 CRITICAL
+  timeZone: 'local',
 
   events: events.value,
 
-  eventDisplay: 'block',
   dayMaxEvents: true,
 
+  /* CLEAN AIRBNB UI */
   eventContent(info) {
-    const { fullName, startTime, endTime } = info.event.extendedProps
+    const b = info.event.extendedProps
 
     return {
       html: `
-        <div style="font-size:11px;">
-          <strong>${fullName}</strong><br/>
-          <span>${startTime} → ${endTime}</span>
+        <div class="event-clean ${b.status}">
+          
+          <div class="event-name">
+            ${b.name}
+          </div>
+
+          <div class="event-time">
+            ${b.startTime} → ${b.endTime}
+          </div>
+
+          ${
+            b.status === 'cancelled'
+              ? `<div class="event-status">Cancelled</div>`
+              : ''
+          }
+
         </div>
       `
     }
@@ -123,8 +150,61 @@ const calendarOptions = computed(() => ({
   font-size: 13px;
 }
 
-.fc-event {
-  border-radius: 6px !important;
-  padding: 2px 4px !important;
+/* =========================
+   EVENT STYLE
+========================= */
+.event-clean {
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  transition: 0.2s;
+}
+
+/* NAME */
+.event-name {
+  font-weight: 600;
+}
+
+/* TIME */
+.event-time {
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+/* STATUS */
+.event-status {
+  font-size: 9px;
+}
+
+/* 🟢 PAID */
+.event-clean.paid {
+  color: white;
+}
+
+/* 🟡 PARTIAL */
+.event-clean.partial {
+  color: #1f2937;
+}
+
+/* 🔵 RESERVED */
+.event-clean.reserved {
+  color: white;
+}
+
+/* 🔴 CANCELLED (SOFT UI) */
+.event-clean.cancelled {
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* STRIKETHROUGH */
+.event-clean.cancelled .event-name {
+  text-decoration: line-through;
+}
+
+/* HOVER */
+.fc-event:hover {
+  transform: scale(1.02);
 }
 </style>
