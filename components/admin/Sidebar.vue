@@ -28,9 +28,9 @@
           Bookings
         </NuxtLink>
 
-        <NuxtLink to="/admin/rooms" class="nav-item d-flex align-items-center gap-2">
+        <NuxtLink to="/admin/cabin" class="nav-item d-flex align-items-center gap-2">
           <Icon name="mdi:bed" />
-          Rooms
+          Cabins
         </NuxtLink>
 
         <NuxtLink to="/admin/inventory" class="nav-item d-flex align-items-center gap-2">
