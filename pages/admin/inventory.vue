@@ -27,8 +27,6 @@
       <button
         class="btn btn-primary ms-auto"
         style="height: 42px;"
-        data-bs-toggle="modal"
-        data-bs-target="#addBookingModal"
         @click="openAdd"
       >
         + Add Booking
@@ -131,15 +129,13 @@
                   <button
                     class="btn btn-light border"
                     @click="editItem(item)"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addBookingModal"
                   >
                     <Icon name="mdi:pencil" size="18" />
                   </button>
 
                   <button
                     class="btn btn-light border text-danger"
-                    @click="deleteItem(item.id)"
+                    @click="openDelete(item)"
                   >
                     <Icon name="mdi:delete" size="18" />
                   </button>
@@ -202,18 +198,23 @@
 
     <AddBookingModal :editData="selectedItem" @save="handleSave" />
     <PaymentModal :item="selectedPaymentItem" @confirm="handlePaymentConfirm" />
+    <DeleteModal :item="selectedDeleteItem" @confirm="handleDeleteConfirm" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
 import AddBookingModal from "@/components/admin/AddBookingModal.vue";
 import PaymentModal from "@/components/admin/PaymentModal.vue";
+import DeleteModal from "@/components/admin/DeleteModal.vue";
+import { useToast } from "vue-toastification";
+import { useModal } from "@/composables/useModal";
 
 definePageMeta({ layout: "admin" });
 
-const { $bootstrap } = useNuxtApp();
+const toast = useToast();
+const { open, close } = useModal();
 
 const API_URL = "http://127.0.0.1:8000/api";
 
@@ -222,6 +223,10 @@ const inventory = ref([]);
 const currentPage = ref(1);
 const lastPage = ref(1);
 const loading = ref(false);
+
+const selectedItem = ref(null);
+const selectedPaymentItem = ref(null);
+const selectedDeleteItem = ref(null);
 
 const search = ref("");
 const status = ref("");
@@ -242,7 +247,7 @@ const fetchBookings = async (page = 1) => {
     lastPage.value = res.data.last_page || 1;
 
   } catch (err) {
-    console.error(err);
+    toast.error("Failed to load bookings");
   } finally {
     loading.value = false;
   }
@@ -256,32 +261,24 @@ const handleSearch = () => {
   debounceTimeout = setTimeout(() => fetchBookings(1), 400);
 };
 
-/* DATETIME */
-const toServerDateTime = (dt) => {
-  if (!dt) return null;
-  const d = new Date(dt);
-  if (isNaN(d)) return null;
-
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:00`;
-};
-
+/* FORMAT */
 const parseLocal = (dt) => {
   if (!dt) return null;
   return new Date(dt.replace("T"," ").replace("Z",""));
 };
 
-/* FORMAT */
 const formatFullDate = (dt) => {
   const d = parseLocal(dt);
   if (!d) return "";
-
   return d.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 };
-const formatTime = (dt) => parseLocal(dt)?.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) || "";
+
+const formatTime = (dt) =>
+  parseLocal(dt)?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) || "";
 
 const isOvernight = (i) => {
   const s = parseLocal(i.start_datetime);
@@ -291,6 +288,7 @@ const isOvernight = (i) => {
 
 /* HELPERS */
 const formatMoney = (v) => Number(v || 0).toLocaleString();
+
 const getBalance = (i) => (i.amount || 0) - (i.paid || 0);
 
 const getPaymentStatus = (i) =>
@@ -303,47 +301,55 @@ const getPaymentStatusClass = (i) =>
     ? "bg-success"
     : "bg-warning text-dark";
 
-    const getStatusLabel = (i) => {
-  if (i.status === "cancelled") return "Cancelled";
-  return "Confirmed";
-};
+const getStatusLabel = (i) =>
+  i.status === "cancelled" ? "Cancelled" : "Confirmed";
 
-const getStatusClass = (i) => {
-  if (i.status === "cancelled") {
-    return "bg-danger-subtle text-danger";
-  }
-  return "bg-success-subtle text-success";
-};
+const getStatusClass = (i) =>
+  i.status === "cancelled"
+    ? "bg-danger-subtle text-danger"
+    : "bg-success-subtle text-success";
+
 /* ACTIONS */
-const selectedItem = ref(null);
-const selectedPaymentItem = ref(null);
 
-const openAdd = () => (selectedItem.value = null);
-const editItem = (i) => (selectedItem.value = { ...i });
-
-const addPayment = async (i) => {
-  selectedPaymentItem.value = i;
-
-  await nextTick();
-
-  const el = document.getElementById("paymentModal");
-  if (!el) return;
-
-  const modal = new $bootstrap.Modal(el);
-  modal.show();
+// OPEN ADD
+const openAdd = () => {
+  selectedItem.value = null;
+  open("addBookingModal");
 };
 
-/* PAYMENT */
+// EDIT
+const editItem = (item) => {
+  selectedItem.value = { ...item };
+  open("addBookingModal");
+};
+
+// PAYMENT
+const addPayment = (item) => {
+  selectedPaymentItem.value = item;
+  open("paymentModal");
+};
+
 const handlePaymentConfirm = async (amount) => {
-  await axios.post(
-    `${API_URL}/bookings/${selectedPaymentItem.value.id}/payment`,
-    { amount }
-  );
+  try {
+    await axios.post(
+      `${API_URL}/bookings/${selectedPaymentItem.value.id}/payment`,
+      { amount }
+    );
 
-  fetchBookings(currentPage.value);
+    toast.success("Payment added");
+    fetchBookings(currentPage.value);
+
+  } catch (err) {
+    toast.error("Payment failed");
+  }
 };
 
-/* SAVE */
+// SAVE BOOKING
+const toServerDateTime = (dt) => {
+  const d = new Date(dt);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:00`;
+};
+
 const handleSave = async (data) => {
   const payload = {
     ...data,
@@ -356,22 +362,37 @@ const handleSave = async (data) => {
   try {
     if (selectedItem.value) {
       await axios.put(`${API_URL}/bookings/${selectedItem.value.id}`, payload);
+      toast.success("Booking updated");
     } else {
       await axios.post(`${API_URL}/bookings`, payload);
+      toast.success("Booking created");
     }
 
     fetchBookings(currentPage.value);
+
   } catch (err) {
-    alert(err.response?.data?.message || "Error saving");
+    toast.error(err.response?.data?.message || "Booking failed");
   }
 };
 
-/* DELETE */
-const deleteItem = async (id) => {
-  if (!confirm("Delete this booking?")) return;
+// DELETE
+const openDelete = (item) => {
+  selectedDeleteItem.value = item;
+  open("deleteModal");
+};
 
-  await axios.delete(`${API_URL}/bookings/${id}`);
-  fetchBookings(currentPage.value);
+const handleDeleteConfirm = async (item) => {
+  try {
+    await axios.delete(`${API_URL}/bookings/${item.id}`);
+
+    toast.success("Booking deleted");
+    close("deleteModal");
+
+    fetchBookings(currentPage.value);
+
+  } catch (err) {
+    toast.error("Delete failed");
+  }
 };
 </script>
 
