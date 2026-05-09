@@ -1,141 +1,139 @@
 <template>
-  <div class="modal fade" id="addBookingModal" tabindex="-1">
-    <div class="modal-dialog modal-md modal-dialog-centered modal-fit">
-      <div class="modal-content border-0 shadow rounded-4">
+  <BaseModal id="addBookingModal" size="modal-md">
 
-        <!-- HEADER -->
-        <div class="modal-header border-0 pb-1">
-          <h6 class="modal-title fw-semibold d-flex align-items-center gap-2">
-            <Icon name="mdi:clipboard-plus" />
-            Add Booking
-          </h6>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- TITLE -->
+    <template #title>
+      <span class="fw-semibold d-flex align-items-center gap-2">
+        <Icon name="mdi:clipboard-plus" />
+        {{ editData ? "Edit Booking" : "Add Booking" }}
+      </span>
+    </template>
+
+    <!-- BODY -->
+    <div>
+
+      <h6 class="text-muted mb-2 fw-semibold small">Guest Information</h6>
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Name</label>
+          <input v-model="form.name" type="text" class="form-control form-control-sm" />
         </div>
 
-        <!-- BODY -->
-        <div class="modal-body pt-1">
+        <div class="col-md-6">
+          <label class="form-label">Address</label>
+          <input v-model="form.address" type="text" class="form-control form-control-sm" />
+        </div>
+      </div>
 
-          <h6 class="text-muted mb-2 fw-semibold small">Guest Information</h6>
+      <h6 class="text-muted mb-2 fw-semibold small">Booking Details</h6>
 
-          <div class="row g-2 mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Name</label>
-              <input v-model="form.name" type="text" class="form-control form-control-sm" />
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Address</label>
-              <input v-model="form.address" type="text" class="form-control form-control-sm" />
-            </div>
-          </div>
-
-          <h6 class="text-muted mb-2 fw-semibold small">Booking Details</h6>
-
-          <div class="row g-2 mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Cabin</label>
-              <select v-model="form.cabin" class="form-select form-select-sm">
-                <option>Talisay Cabin</option>
-                <option>Malobago Cabin</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Date</label>
-              <input v-model="form.date" type="date" class="form-control form-control-sm" />
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Time</label>
-              <select v-model="form.time" class="form-select form-select-sm">
-                <option value="8:00 AM - 5:00 PM">Day (8 AM - 5 PM)</option>
-                <option value="7:00 PM - 7:00 AM">Night (7 PM - 7 AM)</option>
-                <option value="2:00 PM - 12:00 AM">Half Day (2 PM - 12 AM)</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Guests</label>
-              <input v-model="form.guests" type="number" class="form-control form-control-sm" />
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Videoke</label>
-              <select v-model="form.videoke" class="form-select form-select-sm">
-                <option :value="true">Yes</option>
-                <option :value="false">No</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-            <label class="form-label">Paid</label>
-            <input v-model="form.paid" type="number" class="form-control form-control-sm" />
-          </div>
-          </div>
-
-          <!-- PRICE -->
-          <div class="amount-box p-2 rounded-3 small mb-2">
-
-            <div class="d-flex justify-content-between">
-              <span>Cabin</span>
-              <span>
-                ₱{{ form.cabin === "Talisay Cabin" ? "4,500" : "4,000" }}
-              </span>
-            </div>
-
-            <div v-if="form.videoke" class="d-flex justify-content-between">
-              <span>Videoke</span>
-              <span>+ ₱500</span>
-            </div>
-
-            <div
-              v-if="form.date && (isWeekend(form.date) || isHoliday(form.date))"
-              class="d-flex justify-content-between text-warning"
-            >
-              <span>Weekend / Holiday</span>
-              <span>+ ₱500</span>
-            </div>
-
-            <hr class="my-2" />
-
-            <div class="d-flex justify-content-between fw-semibold text-success">
-              <span>Total</span>
-              <span>₱{{ totalAmount.toLocaleString() }}</span>
-            </div>
-
-          </div>
-
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Cabin</label>
+          <select v-model="form.cabin" class="form-select form-select-sm">
+            <option>Talisay Cabin</option>
+            <option>Malobago Cabin</option>
+          </select>
         </div>
 
-        <!-- FOOTER -->
-        <div class="modal-footer border-0 pt-1">
-          <button class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">
-            Cancel
-          </button>
+        <div class="col-md-6">
+          <label class="form-label">Date</label>
+          <input v-model="form.date" type="date" class="form-control form-control-sm" />
+        </div>
 
-          <button
-            class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1"
-            @click="submit"
-          >
-            <Icon name="mdi:content-save" />
-            Save
-          </button>
+        <div class="col-md-6">
+          <label class="form-label">Time</label>
+          <select v-model="form.time" class="form-select form-select-sm">
+            <option value="8:00 AM - 5:00 PM">Day (8 AM - 5 PM)</option>
+            <option value="7:00 PM - 7:00 AM">Night</option>
+            <option value="2:00 PM - 12:00 AM">Half Day</option>
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Guests</label>
+          <input v-model="form.guests" type="number" class="form-control form-control-sm" />
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Videoke</label>
+          <select v-model="form.videoke" class="form-select form-select-sm">
+            <option :value="true">Yes</option>
+            <option :value="false">No</option>
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Paid</label>
+          <input v-model="form.paid" type="number" class="form-control form-control-sm" />
+        </div>
+      </div>
+
+      <!-- PRICE -->
+      <div class="amount-box p-2 rounded-3 small mb-2">
+
+        <div class="d-flex justify-content-between">
+          <span>Cabin</span>
+          <span>₱{{ form.cabin === "Talisay Cabin" ? "4,500" : "4,000" }}</span>
+        </div>
+
+        <div v-if="form.videoke" class="d-flex justify-content-between">
+          <span>Videoke</span>
+          <span>+ ₱500</span>
+        </div>
+
+        <div
+          v-if="form.date && (isWeekend(form.date) || isHoliday(form.date))"
+          class="d-flex justify-content-between text-warning"
+        >
+          <span>Weekend / Holiday</span>
+          <span>+ ₱500</span>
+        </div>
+
+        <hr class="my-2" />
+
+        <div class="d-flex justify-content-between fw-semibold text-success">
+          <span>Total</span>
+          <span>₱{{ totalAmount.toLocaleString() }}</span>
         </div>
 
       </div>
+
     </div>
-  </div>
+
+    <!-- FOOTER -->
+    <template #footer>
+      <button class="btn btn-light btn-sm px-3" @click="closeModal">
+        Cancel
+      </button>
+
+      <button
+        class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1"
+        :disabled="loading"
+        @click="submit"
+      >
+        <span v-if="loading" class="spinner-border spinner-border-sm"></span>
+        <Icon name="mdi:content-save" />
+        Save
+      </button>
+    </template>
+
+  </BaseModal>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, watch } from "vue";
+import BaseModal from "@/components/ui/BaseModal.vue";
+import { useModal } from "@/composables/useModal";
 
-const props = defineProps({
-  editData: Object,
-});
-
+const props = defineProps({ editData: Object });
 const emit = defineEmits(["save"]);
 
+const { close } = useModal();
+const loading = ref(false);
+
+/* FORM */
 const form = ref({
   name: "",
   address: "",
@@ -147,125 +145,37 @@ const form = ref({
   paid: 0,
 });
 
-/* =========================
-   EDIT MODE
-========================= */
-watch(
-  () => props.editData,
-  (val) => {
-    if (val) {
-      const start = parseLocal(val.start_datetime)
+/* EDIT MODE */
+watch(() => props.editData, (val) => {
+  if (!val) return;
 
-      form.value = {
-        ...form.value,
-        name: val.name,
-        address: val.address,
-        cabin: val.cabin,
-        guests: val.guests,
-        videoke: val.videoke,
+  const start = new Date(val.start_datetime);
 
-        date: start.toISOString().split("T")[0],
-
-        time: detectTimeRange(
-          val.start_datetime,
-          val.end_datetime
-        )
-      }
-    }
-  },
-  { immediate: true }
-);
-
-const parseLocal = (dt) => {
-  if (!dt) return null
-  const clean = dt.replace("T", " ").replace("Z", "").split(".")[0]
-  return new Date(clean)
-}
-
-/* =========================
-   TIME GENERATION
-========================= */
-const formatForBackend = (date) => {
-  const pad = (n) => String(n).padStart(2, '0');
-
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
-         `${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-};
-
-const generateDateTime = () => {
-  const base = new Date(form.value.date);
-
-  let start, end;
-
-  if (form.value.time === "8:00 AM - 5:00 PM") {
-    start = new Date(base);
-    start.setHours(8, 0, 0);
-
-    end = new Date(base);
-    end.setHours(17, 0, 0);
-  }
-
-  else if (form.value.time === "7:00 PM - 7:00 AM") {
-    start = new Date(base);
-    start.setHours(19, 0, 0);
-
-    end = new Date(base);
-    end.setHours(7, 0, 0);
-    end.setDate(end.getDate() + 1); // 🔥 overnight
-  }
-
-  else if (form.value.time === "2:00 PM - 12:00 AM") {
-    start = new Date(base);
-    start.setHours(14, 0, 0);
-
-    end = new Date(base);
-    end.setHours(0, 0, 0);
-    end.setDate(end.getDate() + 1);
-  }
-
-  return {
-    start_datetime: formatForBackend(start),
-    end_datetime: formatForBackend(end)
+  form.value = {
+    ...form.value,
+    name: val.name,
+    address: val.address,
+    cabin: val.cabin,
+    guests: val.guests,
+    videoke: val.videoke,
+    date: start.toISOString().split("T")[0],
+    time: "8:00 AM - 5:00 PM"
   };
-};
+});
 
-const detectTimeRange = (start, end) => {
-  const s = parseLocal(start);
-  const e = parseLocal(end);
-
-  if (!s || !e) return "8:00 AM - 5:00 PM";
-
-  if (s.getHours() === 8 && e.getHours() === 17) return "8:00 AM - 5:00 PM";
-
-  if (s.getHours() === 19 && e.getHours() === 7) return "7:00 PM - 7:00 AM";
-
-  if (s.getHours() === 14 && e.getHours() === 0) return "2:00 PM - 12:00 AM";
-
-  return "8:00 AM - 5:00 PM";
-};
-
-/* =========================
-   PRICE
-========================= */
+/* PRICE */
 const isWeekend = (date) => {
   const d = new Date(date);
   return d.getDay() === 0 || d.getDay() === 6;
 };
 
-const holidays = [
-  "2026-01-01",
-  "2026-04-09",
-  "2026-06-12",
-  "2026-12-25",
-];
-
+const holidays = ["2026-01-01","2026-04-09","2026-06-12","2026-12-25"];
 const isHoliday = (date) => holidays.includes(date);
 
 const totalAmount = computed(() => {
   let base = form.value.cabin === "Talisay Cabin" ? 4500 : 4000;
 
   if (form.value.videoke) base += 500;
-
   if (form.value.date && (isWeekend(form.value.date) || isHoliday(form.value.date))) {
     base += 500;
   }
@@ -273,92 +183,44 @@ const totalAmount = computed(() => {
   return base;
 });
 
-/* =========================
-   MODAL
-========================= */
-const closeModal = () => {
-  const modalEl = document.getElementById("addBookingModal");
+/* GENERATE DATETIME */
+const generateDateTime = () => {
+  const base = new Date(form.value.date);
+  let start = new Date(base);
+  let end = new Date(base);
 
-  if (modalEl) {
-    modalEl.classList.remove("show");
-
-    setTimeout(() => {
-      modalEl.style.display = "none";
-      document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
-      document.body.classList.remove("modal-open");
-      document.body.style = "";
-    }, 300);
+  if (form.value.time.includes("8:00")) {
+    start.setHours(8); end.setHours(17);
+  } else if (form.value.time.includes("7:00 PM")) {
+    start.setHours(19); end.setHours(7); end.setDate(end.getDate() + 1);
+  } else {
+    start.setHours(14); end.setHours(0); end.setDate(end.getDate() + 1);
   }
+
+  return {
+    start_datetime: start,
+    end_datetime: end
+  };
 };
 
-/* =========================
-   SUBMIT
-========================= */
-const submit = () => {
+/* SUBMIT */
+const submit = async () => {
+  loading.value = true;
+
   const { start_datetime, end_datetime } = generateDateTime();
 
-  emit("save", {
-    name: form.value.name,
-    address: form.value.address,
-    cabin: form.value.cabin,
-    guests: form.value.guests,
-    videoke: form.value.videoke,
+  await emit("save", {
+    ...form.value,
     amount: totalAmount.value,
     start_datetime,
-    end_datetime,
-    paid: form.value.paid || 0,
+    end_datetime
   });
 
-  form.value = {
-    name: "",
-    address: "",
-    cabin: "Talisay Cabin",
-    date: "",
-    time: "8:00 AM - 5:00 PM",
-    guests: 1,
-    videoke: false,
-    paid: form.value.paid || 0,
-  };
+  loading.value = false;
 
-  closeModal();
+  close("addBookingModal");
 };
+
+/* CLOSE */
+const closeModal = () => close("addBookingModal");
 </script>
-
-<style scoped>
-.modal-fit {
-  max-width: 650px;
-}
-
-.modal-content {
-  font-size: 14px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-body {
-  overflow-y: auto;
-  max-height: calc(90vh - 120px);
-}
-
-.form-label {
-  font-size: 12.5px;
-  margin-bottom: 3px;
-}
-
-.amount-box {
-  background: #f8fafc;
-  border: 1px dashed #ddd;
-}
-
-.form-control,
-.form-select {
-  border-radius: 8px;
-}
-
-.form-control:focus,
-.form-select:focus {
-  border-color: #ff6b2c;
-  box-shadow: 0 0 0 0.1rem rgba(255, 107, 44, 0.2);
-}
-</style>
