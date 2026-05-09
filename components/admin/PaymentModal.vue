@@ -1,64 +1,63 @@
 <template>
-  <div class="modal fade" id="paymentModal" tabindex="-1">
-    
-    <!-- FIXED: removed modal-dialog-centered -->
-    <div class="modal-dialog modal-sm" style="margin-top: 80px;">
-      
-      <div class="modal-content rounded-4 border-0 shadow">
+  <BaseModal id="paymentModal" size="modal-sm">
 
-        <!-- Header -->
-        <div class="modal-header px-3 py-2 border-bottom bg-white rounded-top-4">
-          <h6 class="fw-bold mb-0">Add Payment</h6>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- TITLE -->
+    <template #title>
+      <span class="fw-bold">💳 Add Payment</span>
+    </template>
+
+    <!-- BODY -->
+    <div>
+
+      <!-- Balance Card -->
+      <div class="bg-light rounded-3 p-2 mb-2">
+        <div class="text-muted small">Remaining Balance</div>
+        <div class="fw-bold text-danger" style="font-size: 1.2rem;">
+          ₱ {{ balance.toLocaleString() }}
         </div>
-
-        <!-- Body -->
-        <div class="modal-body px-3 pt-2 pb-3">
-
-          <!-- Balance Card -->
-          <div class="bg-light rounded-3 p-2 mb-2">
-            <div class="text-muted small">Remaining Balance</div>
-            <div class="fw-bold text-danger" style="font-size: 1.2rem;">
-              ₱ {{ balance.toLocaleString() }}
-            </div>
-          </div>
-
-          <!-- Input -->
-          <input
-            v-model="amount"
-            type="number"
-            class="form-control mb-2"
-            placeholder="Enter amount"
-          />
-
-          <!-- Pay Full -->
-          <button
-            class="btn btn-outline-success w-100"
-            @click="fillFull"
-          >
-            Pay Full
-          </button>
-
-        </div>
-
-        <!-- Footer -->
-        <div class="modal-footer border-0 px-3 pb-3 pt-0 d-flex justify-content-end gap-2">
-          <button class="btn btn-light" data-bs-dismiss="modal">
-            Cancel
-          </button>
-
-          <button class="btn btn-primary" @click="submit">
-            Confirm
-          </button>
-        </div>
-
       </div>
+
+      <!-- Input -->
+      <input
+        v-model="amount"
+        type="number"
+        class="form-control mb-2"
+        placeholder="Enter amount"
+      />
+
+      <!-- Pay Full -->
+      <button
+        class="btn btn-outline-success w-100"
+        @click="fillFull"
+      >
+        Pay Full
+      </button>
+
     </div>
-  </div>
+
+    <!-- FOOTER -->
+    <template #footer>
+      <button class="btn btn-light" @click="closeModal">
+        Cancel
+      </button>
+
+      <button
+        class="btn btn-primary"
+        :disabled="loading"
+        @click="submit"
+      >
+        <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
+        Confirm
+      </button>
+    </template>
+
+  </BaseModal>
 </template>
 
 <script setup>
 import { ref, watch, computed } from "vue";
+import BaseModal from "@/components/ui/BaseModal.vue";
+import { useModal } from "@/composables/useModal";
 
 const props = defineProps({
   item: Object
@@ -67,25 +66,28 @@ const props = defineProps({
 const emit = defineEmits(["confirm"]);
 
 const amount = ref("");
+const loading = ref(false);
 
-// computed balance
+const { close } = useModal();
+
+/* BALANCE */
 const balance = computed(() => {
   if (!props.item) return 0;
-  return props.item.amount - props.item.paid;
+  return (props.item.amount || 0) - (props.item.paid || 0);
 });
 
-// reset input when changing item
+/* RESET INPUT */
 watch(() => props.item, () => {
   amount.value = "";
 });
 
-// autofill full payment
+/* PAY FULL */
 const fillFull = () => {
   amount.value = balance.value;
 };
 
-// submit payment
-const submit = () => {
+/* SUBMIT */
+const submit = async () => {
   const payment = Number(amount.value);
 
   if (!payment || payment <= 0) {
@@ -93,16 +95,25 @@ const submit = () => {
     return;
   }
 
-  emit("confirm", payment);
+  loading.value = true;
+
+  await emit("confirm", payment);
+
+  loading.value = false;
+
+  close("paymentModal");
 };
+
+/* CLOSE */
+const closeModal = () => close("paymentModal");
 </script>
 
 <style scoped>
+/* smooth animation */
 .modal-content {
   animation: fadeInUp 0.2s ease;
 }
 
-/* safer animation (no clipping) */
 @keyframes fadeInUp {
   from {
     transform: translateY(5px);

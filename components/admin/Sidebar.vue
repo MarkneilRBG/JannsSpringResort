@@ -1,113 +1,193 @@
 <template>
-  <div>
-    <!-- 🔹 Mobile Header -->
-    <div class="d-md-none d-flex justify-content-between align-items-center p-3 border-bottom">
-      <h5 class="fw-bold text-orange mb-0">Admin</h5>
+  <aside
+    class="sidebar d-flex flex-column p-3"
+    :class="{ collapsed: isCollapsed }"
+  >
+    <!-- HEADER -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <h5 v-if="!isCollapsed" class="fw-bold text-orange mb-0">Admin</h5>
 
-      <button
-        class="btn btn-outline-dark"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#sidebarMenu"
-      >
-        <Icon name="mdi:menu" size="22" />
+      <button class="btn btn-sm btn-light toggle-btn" @click="toggleSidebar">
+        <Icon
+          :name="isCollapsed ? 'mdi:menu-open' : 'mdi:menu'"
+          size="20"
+          style="display: block"
+        />
       </button>
     </div>
 
-    <!-- 🔹 DESKTOP SIDEBAR -->
-    <aside class="sidebar p-3 d-none d-md-block">
-      <h5 class="fw-bold text-orange mb-4">Admin</h5>
+    <!-- NAV -->
+    <ul class="nav nav-pills flex-column gap-2">
 
-      <ul class="nav flex-column gap-2">
-        <NuxtLink to="/admin" class="nav-item d-flex align-items-center gap-2">
-          <Icon name="mdi:view-dashboard" />
-          Dashboard
-        </NuxtLink>
+      <NuxtLink to="/admin" class="nav-link" title="Dashboard">
+        <Icon name="mdi:view-dashboard" />
+        <span v-if="!isCollapsed">Dashboard</span>
+      </NuxtLink>
 
-        <NuxtLink to="/admin/bookings" class="nav-item d-flex align-items-center gap-2">
-          <Icon name="mdi:calendar-check" />
-          Bookings
-        </NuxtLink>
+      <NuxtLink to="/admin/bookings" class="nav-link" title="Bookings">
+        <Icon name="mdi:calendar-check" />
+        <span v-if="!isCollapsed">Bookings</span>
+      </NuxtLink>
 
-        <NuxtLink to="/admin/rooms" class="nav-item d-flex align-items-center gap-2">
-          <Icon name="mdi:bed" />
-          Rooms
-        </NuxtLink>
+      <NuxtLink to="/admin/rooms" class="nav-link" title="Rooms">
+        <Icon name="mdi:bed" />
+        <span v-if="!isCollapsed">Rooms</span>
+      </NuxtLink>
 
-        <NuxtLink to="/admin/inventory" class="nav-item d-flex align-items-center gap-2">
-          <Icon name="mdi:clipboard-list" />
-          Inventory
-        </NuxtLink>
-      </ul>
-    </aside>
+      <NuxtLink to="/admin/inventory" class="nav-link" title="Inventory">
+        <Icon name="mdi:clipboard-list" />
+        <span v-if="!isCollapsed">Inventory</span>
+      </NuxtLink>
 
-    <!-- 🔹 MOBILE OFFCANVAS -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu">
-      <div class="offcanvas-header">
-        <h5 class="fw-bold text-orange">Admin</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-      </div>
+      <NuxtLink to="/admin/today" class="nav-link" title="Today">
+        <Icon name="mdi:clock-outline" />
+        <span v-if="!isCollapsed">Today</span>
+      </NuxtLink>
 
-      <div class="offcanvas-body">
-        <ul class="nav flex-column gap-2">
-          <NuxtLink to="/admin" class="nav-item d-flex align-items-center gap-2" data-bs-dismiss="offcanvas">
-            <Icon name="mdi:view-dashboard" />
-            Dashboard
-          </NuxtLink>
+      <NuxtLink to="/admin/availability" class="nav-link" title="Availability">
+        <Icon name="mdi:calendar-month" />
+        <span v-if="!isCollapsed">Availability</span>
+      </NuxtLink>
 
-          <NuxtLink to="/admin/bookings" class="nav-item d-flex align-items-center gap-2" data-bs-dismiss="offcanvas">
-            <Icon name="mdi:calendar-check" />
-            Bookings
-          </NuxtLink>
-
-          <NuxtLink to="/admin/rooms" class="nav-item d-flex align-items-center gap-2" data-bs-dismiss="offcanvas">
-            <Icon name="mdi:bed" />
-            Rooms
-          </NuxtLink>
-
-          <NuxtLink to="/admin/inventory" class="nav-item d-flex align-items-center gap-2" data-bs-dismiss="offcanvas">
-            <Icon name="mdi:clipboard-list" />
-            Inventory
-          </NuxtLink>
-        </ul>
-      </div>
-    </div>
-  </div>
+    </ul>
+  </aside>
 </template>
 
+<script setup>
+import { onMounted } from "vue";
+import { useSidebar } from "@/composables/useSidebar";
+
+const { isCollapsed } = useSidebar();
+
+const toggleSidebar = () => {
+  isCollapsed.value = !isCollapsed.value;
+
+  localStorage.setItem(
+    "sidebar",
+    isCollapsed.value ? "collapsed" : "expanded"
+  );
+};
+
+onMounted(() => {
+  const saved = localStorage.getItem("sidebar");
+  isCollapsed.value = saved === "collapsed";
+});
+</script>
+
 <style scoped>
+/* SIDEBAR */
 .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 240px;
-  min-height: 100vh;
+  height: 100vh;
   background: #fff;
   border-right: 1px solid #eee;
+  transition: all 0.25s ease;
+  z-index: 1000;
 }
 
-/* Nav item */
-.nav-item {
-  padding: 10px 12px;
-  border-radius: 10px;
-  text-decoration: none;
-  color: #333;
+/* COLLAPSED */
+.sidebar.collapsed {
+  width: 70px;
+}
+
+/* NAV LINK */
+.nav-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  transition: 0.2s;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #555;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
 
-/* Hover */
-.nav-item:hover {
+/* ICON FIX */
+.nav-link > *:first-child {
+  min-width: 22px;
+  display: flex;
+  justify-content: center;
+}
+
+/* HOVER */
+.nav-link:hover {
   background: #f5f5f5;
 }
 
-/* Active */
+/* ACTIVE */
 .router-link-active {
   background: #ffe9e0;
-  color: #ff6b2c;
+  color: #ff6b2c !important;
   font-weight: 500;
 }
 
-/* Icon size */
-.nav-item :deep(svg) {
-  font-size: 20px;
+/* COLLAPSED MODE */
+.sidebar.collapsed .nav-link {
+  justify-content: center;
+  gap: 0;
+  padding: 10px 0;
+  width: 100%;
+  height: 48px;
+  margin: 0;
+}
+
+.sidebar.collapsed .nav-link > * {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.sidebar.collapsed .nav-link > *:first-child {
+  min-width: 22px;
+  width: 22px;
+  margin: 0;
+}
+
+.sidebar.collapsed .nav-link svg,
+.sidebar.collapsed .nav-link > *:first-child svg {
+  width: 20px !important;
+  height: 20px !important;
+  display: block !important;
+}
+
+/* HIDE TEXT ONLY */
+.sidebar.collapsed span {
+  display: none;
+}
+
+/* ACTIVE (CIRCLE STYLE) */
+.sidebar.collapsed .router-link-active {
+  background: #ff6b2c;
+  color: #fff !important;
+}
+
+/* TOGGLE BUTTON */
+.toggle-btn {
+  border-radius: 10px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333 !important;
+  background-color: #f5f5f5 !important;
+  border-color: #d8d8d8 !important;
+}
+
+/* CENTER BUTTON WHEN COLLAPSED */
+.sidebar.collapsed .toggle-btn {
+  margin: 0 auto;
+}
+
+/* FORCE ICON VISIBILITY */
+.toggle-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+  display: block !important;
 }
 </style>
